@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Elimina {{ movie.titolo }}</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+</head>
+<body class="bg-dark text-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary mb-4">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'movie_list' %}">🎬 Filmoteca</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-6">
+            <div class="card bg-secondary border-0">
+                <div class="card-body">
+                    <h1 class="h4 mb-3 text-danger">Elimina film</h1>
+                    <p class="mb-3">
+                        Sei sicuro di voler eliminare il film:<br>
+                        <strong>{{ movie.titolo }} ({{ movie.anno }})</strong>?
+                    </p>
+                    <p class="small text-warning">
+                        L'operazione non è reversibile.
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'movie_detail' movie.pk %}"
+                               class="btn btn-outline-light btn-sm">
+                                Annulla
+                            </a>
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                Sì, elimina
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+</script>
+</body>
+</html>

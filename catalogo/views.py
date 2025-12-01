@@ -1,0 +1,692 @@
+import os
+import platform
+import subprocess
+from .forms import MovieForm
+import re
+import requests
+from django.db.models import Q
+import random
+from typing import Optional, Tuple
+
+from django.conf import settings
+from django.shortcuts import render, get_object_or_404, redirect
+from django.http import HttpResponse
+from .models import Movie
+from django.contrib import messages
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from typing import Optional
+
+VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".mpg", ".mpeg"]
+
+TMDB_SEARCH_URL = "https://api.themoviedb.org/3/search/movie"
+TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
+
+# Regex per intercettare anni plausibili (1900–2039, puoi restringerla se vuoi)
+YEAR_RE = re.compile(r"(19[0-9]{2}|20[0-3][0-9])")
+
+# Token "rumore" tipici dei nomi file: lingue, codec, qualità, gruppi release, ecc.
+NOISE_TOKENS = {
+    "italian",
+    "italiano",
+    "eng",
+    "english",
+    "multi",
+    "sub",
+    "subs",
+    "ac3",
+    "dts",
+    "xvid",
+    "divx",
+    "h264",
+    "x264",
+    "h265",
+    "x265",
+    "dvdrip",
+    "bdrip",
+    "webrip",
+    "webdl",
+    "bluray",
+    "hdrip",
+    "cam",
+    "limited",
+    "uncut",
+    "extended",
+    "remastered",
+    "1080p",
+    "720p",
+    "2160p",
+    "4k",
+    "uhd",
+    "gbm",
+    "i_n_r_g",
+    "ita",
+    "proper",
+    "repack",
+}
+
+
+def fetch_movie_data_from_tmdb(
+    title: str, year: Optional[int] = None
+) -> Optional[dict]:
+    """
+    Chiede a TMDB i dati di un film e restituisce un dizionario con:
+      - poster_url
+      - overview (trama)
+      - year
+      - director
+      - genres (stringa tipo "Drammatico, Thriller")
+
+    Se non trova niente o c'è un errore, restituisce None.
+    """
+    api_key = getattr(settings, "TMDB_API_KEY", None)
+    if not api_key or api_key == "INSERISCI_LA_TUA_API_KEY_QUI":
+        return None
+
+    # 1) Cerca il film per titolo (e opzionalmente anno)
+    params = {
+        "api_key": api_key,
+        "query": title,
+        "include_adult": "false",
+        "language": "it-IT",
+    }
+    if year:
+        params["year"] = year
+
+    try:
+        resp = requests.get(TMDB_SEARCH_URL, params=params, timeout=5)
+        resp.raise_for_status()
+    except Exception:
+        return None
+
+    data = resp.json()
+    results = data.get("results") or []
+    if not results:
+        return None
+
+    movie = results[0]
+    movie_id = movie.get("id")
+    poster_path = movie.get("poster_path")
+    release_date = movie.get("release_date") or ""
+    overview_it = movie.get("overview") or ""
+
+    director_name = None
+    genres_str = None
+
+    # 2) Chiede dettagli + credits per avere regista e generi
+    if movie_id:
+        try:
+            detail_resp = requests.get(
+                f"https://api.themoviedb.org/3/movie/{movie_id}",
+                params={
+                    "api_key": api_key,
+                    "language": "it-IT",
+                    "append_to_response": "credits",
+                },
+                timeout=5,
+            )
+            detail_resp.raise_for_status()
+            detail_data = detail_resp.json()
+
+            # generi
+            genres = detail_data.get("genres") or []
+            if genres:
+                genres_str = ", ".join(g.get("name") for g in genres if g.get("name"))
+
+            # regista dai credits
+            credits = detail_data.get("credits") or {}
+            crew = credits.get("crew") or []
+            for person in crew:
+                if person.get("job") == "Director":
+                    director_name = person.get("name")
+                    break
+
+            # se l'overview dal search era vuota, prova con quella dei dettagli
+            if not overview_it:
+                overview_it = detail_data.get("overview") or ""
+
+        except Exception:
+            # se fallisce questa chiamata, pazienza, useremo solo i dati base
+            pass
+
+    # calcolo poster_url completo
+    poster_url = f"{TMDB_IMAGE_BASE}{poster_path}" if poster_path else None
+
+    # estrazione anno da release_date (formato "YYYY-MM-DD")
+    year_val: Optional[int] = None
+    if release_date and len(release_date) >= 4:
+        try:
+            year_val = int(release_date[:4])
+        except ValueError:
+            year_val = None
+
+    result = {
+        "poster_url": poster_url,
+        "overview": (overview_it.strip() or None),
+        "year": year_val,
+        "director": director_name,
+        "genres": genres_str,
+    }
+    return result
+
+
+def guess_title_and_year(filename: str):
+    """
+    Prova a ricavare titolo e anno dal nome file (senza percorso).
+
+    Regola principale:
+    - se trova un anno (19xx o 20xx), considera solo la parte PRIMA dell'anno come titolo.
+    - poi ripulisce il titolo togliendo tag tecnici (1080p, BluRay, x264, ITALIAN, ecc.).
+    """
+    # togliamo l'estensione
+    base, _ = os.path.splitext(filename)
+
+    # prova a trovare un anno 19xx o 20xx
+    match = re.search(r"(19[0-9]{2}|20[0-9]{2})", base)
+    year = None
+    if match:
+        year = int(match.group(0))
+        # prendi solo la parte PRIMA dell'anno come titolo grezzo
+        raw_title = base[: match.start()]
+    else:
+        # se non c'è anno, usa tutto il nome (senza estensione)
+        raw_title = base
+
+    # sostituisci caratteri di "separazione" con spazi
+    working = re.sub(r"[\.\_\-\[\]\(\)]", " ", raw_title)
+
+    # lista di parole "spazzatura" da togliere se presenti nel titolo
+    junk_words = [
+        "1080p",
+        "720p",
+        "2160p",
+        "4k",
+        "uhd",
+        "bluray",
+        "bdrip",
+        "brrip",
+        "hdrip",
+        "dvdrip",
+        "dvd",
+        "webrip",
+        "webdl",
+        "web-dl",
+        "hdtv",
+        "x264",
+        "x265",
+        "h264",
+        "h265",
+        "hevc",
+        "ac3",
+        "dts",
+        "truehd",
+        "atmos",
+        "italian",
+        "ita",
+        "eng",
+        "english",
+        "multi",
+        "sub",
+        "subbed",
+        "dubbed",
+        "limited",
+        "proper",
+        "internal",
+        "repack",
+        "remux",
+        "hdr",
+        "10bit",
+        "8bit",
+    ]
+
+    # crea una regex che trova queste parole come "parole intere" (case-insensitive)
+    pattern = r"\b(" + "|".join(junk_words) + r")\b"
+    working = re.sub(pattern, " ", working, flags=re.IGNORECASE)
+
+    # comprimi spazi multipli
+    title = re.sub(r"\s+", " ", working).strip()
+
+    # se per qualche motivo rimane vuoto, usa il base originale
+    if not title:
+        title = base
+
+    return title, year
+
+
+def movie_list(request):
+    qs = Movie.objects.all().order_by("titolo")
+
+    # Leggi i parametri dalla query string (?titolo=...&anno_da=...)
+    titolo = request.GET.get("titolo", "")
+    anno_da = request.GET.get("anno_da", "")
+    anno_a = request.GET.get("anno_a", "")
+    genere = request.GET.get("genere", "")
+    regista = request.GET.get("regista", "")
+    visto = request.GET.get("visto", "")  # "", "si", "no"
+    voto_da = request.GET.get("voto_da", "")
+    voto_a = request.GET.get("voto_a", "")
+    codifica = request.GET.get("codifica", "")
+    estensione = request.GET.get("estensione", "")
+    dim_da = request.GET.get("dim_da", "")
+    dim_a = request.GET.get("dim_a", "")
+    percorso = request.GET.get("percorso", "")
+
+    # --- Applica i filtri uno per uno ---
+
+    if titolo:
+        qs = qs.filter(titolo__icontains=titolo)
+
+    if anno_da:
+        qs = qs.filter(anno__gte=anno_da)
+    if anno_a:
+        qs = qs.filter(anno__lte=anno_a)
+
+    if genere:
+        qs = qs.filter(genere__icontains=genere)
+
+    if regista:
+        qs = qs.filter(regista__icontains=regista)
+
+    if visto == "si":
+        qs = qs.filter(visto=True)
+    elif visto == "no":
+        qs = qs.filter(visto=False)
+
+    if voto_da:
+        qs = qs.filter(voto__gte=voto_da)
+    if voto_a:
+        qs = qs.filter(voto__lte=voto_a)
+
+    if codifica:
+        qs = qs.filter(codifica__icontains=codifica)
+
+    if estensione:
+        qs = qs.filter(estensione__icontains=estensione)
+
+    if dim_da:
+        qs = qs.filter(dimensione_file_mb__gte=dim_da)
+    if dim_a:
+        qs = qs.filter(dimensione_file_mb__lte=dim_a)
+
+    if percorso:
+        qs = qs.filter(percorso__icontains=percorso)
+
+    filtri = {
+        "titolo": titolo,
+        "anno_da": anno_da,
+        "anno_a": anno_a,
+        "genere": genere,
+        "regista": regista,
+        "visto": visto,
+        "voto_da": voto_da,
+        "voto_a": voto_a,
+        "codifica": codifica,
+        "estensione": estensione,
+        "dim_da": dim_da,
+        "dim_a": dim_a,
+        "percorso": percorso,
+    }
+
+    # --- PAGINAZIONE ---
+    paginator = Paginator(qs, 24)  # 24 film per pagina
+    page_number = request.GET.get("page")  # numero pagina da URL ?page=2
+
+    try:
+        page_obj = paginator.page(page_number)
+    except PageNotAnInteger:
+        page_obj = paginator.page(1)
+    except EmptyPage:
+        page_obj = paginator.page(paginator.num_pages)
+
+    # mantieni i filtri nei link di paginazione
+    querydict = request.GET.copy()
+    querydict.pop("page", None)
+    base_query = querydict.urlencode()
+
+    # 🔥 Film random con locandina per l'header
+    all_with_poster = Movie.objects.exclude(locandina_url__isnull=True).exclude(
+        locandina_url__exact=""
+    )
+    random_movie = (
+        random.choice(list(all_with_poster)) if all_with_poster.exists() else None
+    )
+
+    return render(
+        request,
+        "catalogo/movie_list.html",
+        {
+            "movies": page_obj,
+            "filtri": filtri,
+            "page_obj": page_obj,
+            "is_paginated": page_obj.has_other_pages(),
+            "base_query": base_query,
+            "random_movie": random_movie,
+        },
+    )
+
+
+def _apri_file(path: str):
+    """Apri il file video con il player predefinito del sistema operativo."""
+    sistema = platform.system()
+    if sistema == "Windows":
+        os.startfile(path)  # type: ignore[attr-defined]
+    elif sistema == "Darwin":  # macOS
+        subprocess.Popen(["open", path])
+    else:  # Linux
+        subprocess.Popen(["xdg-open", path])
+
+
+def movie_play(request, pk):
+    """Vista che apre il film e poi torna alla lista."""
+    movie = get_object_or_404(Movie, pk=pk)
+
+    if not os.path.exists(movie.percorso):
+        return HttpResponse("File non trovato: " + movie.percorso, status=404)
+
+    try:
+        _apri_file(movie.percorso)
+    except Exception as e:
+        return HttpResponse(f"Errore aprendo il file: {e}", status=500)
+
+    # Dopo aver lanciato il player, torna alla lista
+    return redirect("movie_list")
+
+
+def scan_folder(request):
+    """Scansiona una cartella e aggiunge i file video al catalogo (con tentativo di anno dal nome)."""
+    if request.method != "POST":
+        return redirect("movie_list")
+
+    base_dir = request.POST.get("base_dir", "").strip()
+
+    if not base_dir:
+        messages.error(request, "Devi specificare una cartella da scansionare.")
+        return redirect("movie_list")
+
+    if not os.path.isdir(base_dir):
+        messages.error(
+            request, f"La cartella '{base_dir}' non esiste o non è accessibile."
+        )
+        return redirect("movie_list")
+
+    count_total = 0
+    count_new = 0
+
+    for root, dirs, files in os.walk(base_dir):
+        for name in files:
+            ext = os.path.splitext(name)[1].lower()
+            if ext in VIDEO_EXTENSIONS:
+                count_total += 1
+                full_path = os.path.join(root, name)
+                size_mb = os.path.getsize(full_path) / (1024 * 1024)
+
+                # usa la funzione helper per capire titolo e anno
+                titolo, anno_trovato = guess_title_and_year(name)
+
+                # se non trova anno, metti un default (es. 2000)
+                anno = anno_trovato
+
+                movie, created = Movie.objects.get_or_create(
+                    percorso=full_path,
+                    defaults={
+                        "titolo": titolo,
+                        "anno": anno,
+                        "genere": "",
+                        "regista": "",
+                        "dimensione_file_mb": round(size_mb, 1),
+                        "estensione": ext,
+                        "codifica": "",
+                    },
+                )
+                if created:
+                    count_new += 1
+
+    if count_total == 0:
+        messages.info(request, "Nessun file video trovato nella cartella.")
+    else:
+        messages.success(
+            request,
+            f"Trovati {count_total} file video, aggiunti {count_new} nuovi film al catalogo.",
+        )
+
+    return redirect("movie_list")
+
+
+def movie_detail(request, pk):
+    movie = get_object_or_404(Movie, pk=pk)
+    return render(request, "catalogo/movie_detail.html", {"movie": movie})
+
+
+def movie_edit(request, pk):
+    movie = get_object_or_404(Movie, pk=pk)
+
+    if request.method == "POST":
+        form = MovieForm(request.POST, instance=movie)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Film aggiornato con successo.")
+            return redirect("movie_list")
+    else:
+        form = MovieForm(instance=movie)
+
+    return render(
+        request,
+        "catalogo/movie_form.html",
+        {
+            "form": form,
+            "movie": movie,
+        },
+    )
+
+
+def movie_delete(request, pk):
+    movie = get_object_or_404(Movie, pk=pk)
+
+    if request.method == "POST":
+        titolo = str(movie)
+        movie.delete()
+        messages.success(request, f"Film '{titolo}' eliminato.")
+        return redirect("movie_list")
+
+    return render(
+        request,
+        "catalogo/movie_confirm_delete.html",
+        {
+            "movie": movie,
+        },
+    )
+
+
+def update_posters(request):
+    """
+    Prova a recuperare locandina, trama, anno, regista e genere
+    da TMDB per i film che non hanno ancora questi dati completi.
+    """
+    if request.method != "POST":
+        return redirect("movie_list")
+
+    # puoi decidere qui il criterio di selezione:
+    # - solo quelli senza locandina
+    # - oppure tutti i film
+    # per non fare troppe chiamate, restiamo sui film senza locandina
+    # Aggiorna solo i film che NON hanno ancora la trama
+    movies = Movie.objects.filter(Q(trama__isnull=True) | Q(trama__exact=""))
+
+    count_checked = 0
+    count_updated = 0
+
+    for movie in movies:
+        count_checked += 1
+        data = fetch_movie_data_from_tmdb(movie.titolo, movie.anno)
+        if not data:
+            continue
+
+        changed_fields = []
+
+        poster_url = data.get("poster_url")
+        overview = data.get("overview")
+        year_val = data.get("year")
+        director_name = data.get("director")
+        genres_str = data.get("genres")
+
+        # aggiorna SOLO se il campo è vuoto, per non sovrascrivere
+        if poster_url and not movie.locandina_url:
+            movie.locandina_url = poster_url
+            changed_fields.append("locandina_url")
+
+        if overview and not movie.trama:
+            movie.trama = overview
+            changed_fields.append("trama")
+
+        if year_val and not movie.anno:
+            movie.anno = year_val
+            changed_fields.append("anno")
+
+        if director_name and not movie.regista:
+            movie.regista = director_name
+            changed_fields.append("regista")
+
+        if genres_str and not movie.genere:
+            movie.genere = genres_str
+            changed_fields.append("genere")
+
+        if changed_fields:
+            movie.save(update_fields=changed_fields)
+            count_updated += 1
+
+    if count_checked == 0:
+        messages.info(request, "Non ci sono film da aggiornare.")
+    else:
+        messages.success(
+            request,
+            f"Controllati {count_checked} film, aggiornati {count_updated} record.",
+        )
+
+    return redirect("movie_list")
+
+    """
+    Aggiorna la locandina SOLO per il film indicato.
+    Funziona sia per GET che per POST e poi torna alla lista.
+    """
+    movie = get_object_or_404(Movie, pk=pk)
+
+    url = fetch_poster_url_from_tmdb(movie.titolo, movie.anno)
+    if url:
+        movie.locandina_url = url
+        movie.save(update_fields=["locandina_url"])
+        messages.success(request, "Locandina aggiornata da TMDB per questo film.")
+    else:
+        messages.warning(request, "Nessuna locandina trovata su TMDB per questo film.")
+
+    return redirect("movie_list")
+
+    """
+    Aggiorna dati TMDB per il singolo film:
+    locandina, trama, anno, regista, genere.
+    """
+    movie = get_object_or_404(Movie, pk=pk)
+
+    data = fetch_movie_data_from_tmdb(movie.titolo, movie.anno)
+    if not data:
+        messages.warning(request, "Nessun dato trovato su TMDB per questo film.")
+        return redirect("movie_list")
+
+    changed_fields = []
+
+    poster_url = data.get("poster_url")
+    overview = data.get("overview")
+    year_val = data.get("year")
+    director_name = data.get("director")
+    genres_str = data.get("genres")
+
+    if poster_url and not movie.locandina_url:
+        movie.locandina_url = poster_url
+        changed_fields.append("locandina_url")
+
+    if overview and not movie.trama:
+        movie.trama = overview
+        changed_fields.append("trama")
+
+    if year_val and not movie.anno:
+        movie.anno = year_val
+        changed_fields.append("anno")
+
+    if director_name and not movie.regista:
+        movie.regista = director_name
+        changed_fields.append("regista")
+
+    if genres_str and not movie.genere:
+        movie.genere = genres_str
+        changed_fields.append("genere")
+
+    if changed_fields:
+        movie.save(update_fields=changed_fields)
+        messages.success(
+            request,
+            "Dati aggiornati da TMDB per questo film "
+            f"({', '.join(changed_fields)}).",
+        )
+    else:
+        messages.info(request, "Nessun campo aggiornato: i dati erano già presenti.")
+
+    return redirect("movie_list")
+
+
+def guess_title_and_year(filename: str) -> Tuple[str, Optional[int]]:
+    """
+    Cerca di dedurre il titolo del film e l'anno da un nome file tipo:
+    'Cheri.2009.iTALiAN.LiMITED.AC3.DVDRip.XviD.GBM.avi'
+
+    Ritorna:
+        (titolo_pulito, anno_oppure_None)
+    """
+
+    # 1) Tieni solo il nome del file senza path
+    base = os.path.basename(filename)
+
+    # 2) Togli l'estensione (.mkv, .avi, .mp4, ecc.)
+    name, _ext = os.path.splitext(base)
+
+    # 3) Sostituisci puntini/underscore con spazi
+    #    es: "Cheri.2009.iTALiAN..." → "Cheri 2009 iTALiAN..."
+    name_clean = re.sub(r"[._]+", " ", name).strip()
+
+    # 4) Cerca un anno usando la regex
+    match_year = YEAR_RE.search(name_clean)
+    anno: Optional[int] = None
+    if match_year:
+        anno = int(match_year.group(0))
+        # prendiamo la parte prima dell'anno come base del titolo
+        title_part = name_clean[: match_year.start()]
+    else:
+        # se non troviamo anno, usiamo tutta la stringa
+        title_part = name_clean
+
+    # 5) Spezzettiamo in token (parole)
+    tokens = title_part.split()
+
+    cleaned_tokens = []
+    for t in tokens:
+        t_norm = t.lower()
+
+        # se vediamo un token di "rumore", assumiamo che da lì in poi non sia più titolo
+        if t_norm in NOISE_TOKENS:
+            break
+
+        # salta cose tipo CD1, CD2, DISC1...
+        if re.match(r"cd\d+", t_norm) or re.match(r"disc\d+", t_norm):
+            continue
+
+        cleaned_tokens.append(t)
+
+    # 6) Ricostruisci il titolo pulito
+    titolo = " ".join(cleaned_tokens).strip()
+
+    # Se per qualche motivo è vuoto, fai un fallback sulla parte prima dell'anno
+    if not titolo:
+        titolo = title_part.strip()
+
+    # 7) Normalizza la capitalizzazione, se è tutto maiuscolo tipo CHERI → Cheri
+    if titolo.isupper():
+        titolo = titolo.title()
+
+    return titolo, anno

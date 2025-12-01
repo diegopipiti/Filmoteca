@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Catalogo film</title>
+
+    <!-- Bootstrap CSS da CDN -->
+        <!-- Bootstrap CSS da CDN -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous"
+    >
+
+    <style>
+        /* Rapporto 2:3 per i poster (stile locandina) */
+        .ratio-2x3 {
+            position: relative;
+            width: 100%;
+            padding-top: 150%; /* 3/2 = 1.5 -> 150% */
+            overflow: hidden;
+            background-color: #444;
+        }
+
+        .poster-img {
+            position: absolute;
+            inset: 0;             /* top:0, right:0, bottom:0, left:0 */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;    /* riempi l’area, tagliando se serve */
+        }
+
+        .poster-placeholder {
+            position: absolute;
+            inset: 0;
+        }
+    </style>
+
+</head>
+
+<body class="bg-dark text-light">
+    
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom border-secondary mb-4">
+        <div class="container-fluid">
+
+            <!-- BRAND / HOME -->
+            <a class="navbar-brand" href="{% url 'movie_list' %}">🎬 Filmoteca</a>
+            <div class="d-flex align-items-center gap-2 ms-auto">
+
+                <!-- FILTRI -->
+                <button type="button"
+                        class="btn btn-outline-secondary btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#filtersModal">
+                    Filtri
+                </button>
+
+                <!-- SCANSIONE DISCHI -->
+                <button type="button"
+                        class="btn btn-outline-info btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#scanModal">
+                    Scansiona dischi
+                </button>
+
+                <!-- METADATI -->
+                <button type="button"
+                        class="btn btn-outline-warning btn-sm"
+                        data-bs-toggle="modal"
+                        data-bs-target="#metadataModal">
+                    Aggiorna metadati
+                </button>
+
+                <!-- RICERCA RAPIDA -->
+                <form class="d-flex ms-2" method="get" action="{% url 'movie_list' %}">
+                    <input class="form-control form-control-sm me-2"
+                        type="search"
+                        name="titolo"
+                        placeholder="Cerca titolo..."
+                        value="{{ filtri.titolo }}">
+                    <button class="btn btn-sm btn-primary" type="submit">
+                        Cerca
+                    </button>
+                </form>
+
+                <!-- ADMIN -->
+                <a class="btn btn-outline-light btn-sm ms-2" href="/admin/">Admin</a>
+            </div>
+
+
+
+        </div>
+    </nav>
+
+        <!-- MODAL FILTRI AVANZATI -->
+    <div class="modal fade" id="filtersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content bg-dark text-light border-secondary">
+        <div class="modal-header border-secondary">
+            <h5 class="modal-title">Filtri avanzati</h5>
+            <button type="button"
+                    class="btn-close btn-close-white"
+                    data-bs-dismiss="modal"
+                    aria-label="Chiudi"></button>
+        </div>
+
+        <!-- FORM FILTRI (GET) -->
+        <form method="get" action="{% url 'movie_list' %}">
+            <div class="modal-body">
+            <div class="row g-3">
+
+                <!-- Titolo -->
+                <div class="col-12">
+                <label class="form-label">Titolo contiene</label>
+                <input type="text" name="titolo" class="form-control form-control-sm"
+                        value="{{ filtri.titolo|default:'' }}">
+                </div>
+
+                <!-- Anno da/a -->
+                <div class="col-12 col-md-6">
+                <label class="form-label">Anno</label>
+                <div class="d-flex gap-1">
+                    <input type="number" name="anno_da" class="form-control form-control-sm"
+                        placeholder="da"
+                        value="{{ filtri.anno_da|default:'' }}">
+                    <input type="number" name="anno_a" class="form-control form-control-sm"
+                        placeholder="a"
+                        value="{{ filtri.anno_a|default:'' }}">
+                </div>
+                </div>
+
+                <!-- Genere -->
+                <div class="col-12 col-md-6">
+                <label class="form-label">Genere contiene</label>
+                <input type="text" name="genere" class="form-control form-control-sm"
+                        value="{{ filtri.genere|default:'' }}">
+                </div>
+
+                <!-- Regista -->
+                <div class="col-12 col-md-6">
+                <label class="form-label">Regista contiene</label>
+                <input type="text" name="regista" class="form-control form-control-sm"
+                        value="{{ filtri.regista|default:'' }}">
+                </div>
+
+                <!-- Visto -->
+                <div class="col-12 col-md-6">
+                <label class="form-label">Già visto?</label>
+                <select name="visto" class="form-select form-select-sm">
+                    <option value="" {% if not filtri.visto %}selected{% endif %}>Tutti</option>
+                    <option value="si" {% if filtri.visto == "si" %}selected{% endif %}>Solo visti</option>
+                    <option value="no" {% if filtri.visto == "no" %}selected{% endif %}>Solo non visti</option>
+                </select>
+                </div>
+
+                <!-- Voto -->
+                <div class="col-12 col-md-6">
+                <label class="form-label">Voto</label>
+                <div class="d-flex gap-1">
+                    <input type="number" name="voto_da" class="form-control form-control-sm"
+                        placeholder="da"
+                        value="{{ filtri.voto_da|default:'' }}">
+                    <input type="number" name="voto_a" class="form-control form-control-sm"
+                        placeholder="a"
+                        value="{{ filtri.voto_a|default:'' }}">
+                </div>
+                </div>
+
+                <!-- Codifica -->
+                <div class="col-12 col-md-6">
+                <label class="form-label">Codifica contiene</label>
+                <input type="text" name="codifica" class="form-control form-control-sm"
+                        value="{{ filtri.codifica|default:'' }}">
+                </div>
+
+                <!-- Estensione -->
+                <div class="col-12 col-md-6">
+                <label class="form-label">Estensione contiene</label>
+                <input type="text" name="estensione" class="form-control form-control-sm"
+                        value="{{ filtri.estensione|default:'' }}">
+                </div>
+
+                <!-- Dimensione file -->
+                <div class="col-12 col-md-6">
+                <label class="form-label">Dimensione file (MB)</label>
+                <div class="d-flex gap-1">
+                    <input type="number" step="0.01" name="dim_da"
+                        class="form-control form-control-sm"
+                        placeholder="da"
+                        value="{{ filtri.dim_da|default:'' }}">
+                    <input type="number" step="0.01" name="dim_a"
+                        class="form-control form-control-sm"
+                        placeholder="a"
+                        value="{{ filtri.dim_a|default:'' }}">
+                </div>
+                </div>
+
+                <!-- Percorso -->
+                <div class="col-12">
+                <label class="form-label">Percorso contiene</label>
+                <input type="text" name="percorso" class="form-control form-control-sm"
+                        value="{{ filtri.percorso|default:'' }}">
+                </div>
+
+            </div>
+            </div>
+
+            <div class="modal-footer border-secondary">
+            <a href="{% url 'movie_list' %}" class="btn btn-outline-light btn-sm">
+                Reset
+            </a>
+            <button type="submit" class="btn btn-primary btn-sm">
+                Applica filtri
+            </button>
+            </div>
+        </form>
+
+        </div>
+    </div>
+    </div>
+
+        <!-- MODAL SCANSIONE CARTELLA -->
+    <div class="modal fade" id="scanModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-scrollable">
+        <div class="modal-content bg-dark text-light border-secondary">
+        <div class="modal-header border-secondary">
+            <h5 class="modal-title">Scansiona cartella</h5>
+            <button type="button"
+                    class="btn-close btn-close-white"
+                    data-bs-dismiss="modal"
+                    aria-label="Chiudi"></button>
+        </div>
+
+        <form method="post" action="{% url 'scan_folder' %}" class="small">
+            {% csrf_token %}
+            <div class="modal-body">
+            <div class="mb-2">
+                <label class="form-label">Percorso cartella</label>
+                <input type="text"
+                    name="base_dir"
+                    class="form-control form-control-sm"
+                    placeholder="Es. D:\Film">
+            </div>
+            <p class="form-text text-light mt-2">
+                Cerca file video nelle sottocartelle e li aggiunge al catalogo
+                (solo nuovi percorsi).
+            </p>
+            </div>
+
+            <div class="modal-footer border-secondary">
+            <button type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    data-bs-dismiss="modal">
+                Annulla
+            </button>
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                Scansiona e aggiungi film
+            </button>
+            </div>
+        </form>
+        </div>
+    </div>
+    </div>
+
+        <!-- MODAL METADATI -->
+    <div class="modal fade" id="metadataModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-scrollable">
+        <div class="modal-content bg-dark text-light border-secondary">
+        <div class="modal-header border-secondary">
+            <h5 class="modal-title">Aggiorna metadati</h5>
+            <button type="button"
+                    class="btn-close btn-close-white"
+                    data-bs-dismiss="modal"
+                    aria-label="Chiudi"></button>
+        </div>
+
+        <form method="post" action="{% url 'update_posters' %}" class="small">
+            {% csrf_token %}
+            <div class="modal-body">
+            <p class="small mb-2">
+                Trova e aggiorna i metadati mancanti consultando TMDB
+                (trama, anno, genere, regista, locandina) per i film senza trama.
+            </p>
+            <p class="small text-muted mb-0">
+                L'operazione potrebbe richiedere qualche istante a seconda del numero di film.
+            </p>
+            </div>
+
+            <div class="modal-footer border-secondary">
+            <button type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    data-bs-dismiss="modal">
+                Annulla
+            </button>
+            <button type="submit" class="btn btn-outline-light btn-sm">
+                Trova/Aggiorna metadati
+            </button>
+            </div>
+        </form>
+
+        </div>
+    </div>
+    </div>
+
+
+    <div class="container">
+
+        {% if messages %}
+        <div class="row">
+            <div class="col-12">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row mb-4">
+            <div class="col">
+            {% if random_movie %}
+                <div class="random-banner mb-4 position-relative rounded overflow-hidden">
+
+                    <!-- SFONDO -->
+                    <div class="position-absolute top-0 start-0 w-100 h-100"
+                        style="
+                            background-image: url('{{ random_movie.locandina_url }}');
+                            background-size: cover;
+                            background-position: center;
+                            filter: blur(8px);
+                            transform: scale(1.1);
+                            opacity: 0.85;
+                        ">
+                    </div>
+
+                    <!-- OVERLAY LEGGERISSIMO -->
+                    <div class="position-absolute top-0 start-0 w-100 h-100"
+                        style="
+                            background: linear-gradient(
+                                rgba(0,0,0,0.25),
+                                rgba(0,0,0,0.45)
+                                );
+                        ">
+                    </div>
+
+
+
+                    <!-- CONTENUTO -->
+                    <div class="position-relative text-center text-light px-3 py-5"
+                        style="z-index: 5;">
+
+                        <!-- TITOLO -->
+                        <h1 class="fw-bold display-5 mb-3">
+                            {{ random_movie.titolo }}
+                        </h1>
+
+                        <!-- BADGE -->
+                        <div class="mb-3">
+                            {% if random_movie.anno %}
+                                <span class="badge bg-light text-dark me-1">
+                                    {{ random_movie.anno }}
+                                </span>
+                            {% endif %}
+
+                            {% if random_movie.genere %}
+                                <span class="badge bg-secondary me-1">
+                                    {{ random_movie.genere }}
+                                </span>
+                            {% endif %}
+
+                            {% if random_movie.voto %}
+                                <span class="badge bg-warning text-dark">
+                                    ★ {{ random_movie.voto }}/10
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- TRAMA -->
+                        {% if random_movie.trama %}
+                        <p class="lead fw-normal mb-4 d-none d-md-block"
+                        style="max-width: 720px; margin: 0 auto;">
+                            {{ random_movie.trama|truncatechars:160 }}
+                        </p>
+                        {% endif %}
+
+                        <!-- BOTTONI -->
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'movie_play' random_movie.pk %}"
+                            class="btn btn-primary btn-lg">
+                                ▶ Riproduci
+                            </a>
+
+                            <button type="button"
+                                    class="btn btn-outline-light btn-lg"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#movieModal"
+                                    data-title="{{ random_movie.titolo }}"
+                                    data-anno="{{ random_movie.anno }}"
+                                    data-genere="{{ random_movie.genere }}"
+                                    data-regista="{{ random_movie.regista }}"
+                                    data-visto="{{ random_movie.visto }}"
+                                    data-voto="{{ random_movie.voto }}"
+                                    data-percorso="{{ random_movie.percorso }}"
+                                    data-poster="{{ random_movie.locandina_url }}"
+                                    data-dimensione="{{ random_movie.dimensione_file_mb }}"
+                                    data-codifica="{{ random_movie.codifica }}"
+                                    data-trama="{{ random_movie.trama|default_if_none:'' }}"
+                                    data-updateposter-url="{% url 'update_movie_poster' random_movie.pk %}"
+                                    data-play-url="{% url 'movie_play' random_movie.pk %}"
+                                    data-edit-url="{% url 'movie_edit' random_movie.pk %}"
+                                    data-delete-url="{% url 'movie_delete' random_movie.pk %}">
+                                Dettagli
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+                {% endif %}
+
+
+            </div>
+        </div>
+
+        <div class="row">
+
+            <!-- Tabella -->
+            <div class="col-12 mb-4">
+                <div class="p-0">
+                    <div class="p-0">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-light text-dark">
+                                La tua collezione vanta {{ page_obj.paginator.count }} titoli
+                            </span>
+                        </div>
+
+                        {% if movies %}
+                            <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-6 g-3">
+                            {% for m in movies %}
+                                <div class="col">
+                                    <a
+                                        href="#"
+                                        class="text-decoration-none text-light"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#movieModal"
+                                        data-title="{{ m.titolo }}"
+                                        data-anno="{{ m.anno }}"
+                                        data-genere="{{ m.genere }}"
+                                        data-regista="{{ m.regista }}"
+                                        data-visto="{{ m.visto }}"
+                                        data-voto="{{ m.voto }}"
+                                        data-percorso="{{ m.percorso }}"
+                                        data-poster="{{ m.locandina_url }}"
+                                        data-dimensione="{{ m.dimensione_file_mb }}"
+                                        data-codifica="{{ m.codifica }}"
+                                        data-trama="{{ m.trama|default_if_none:'' }}"
+                                        data-updateposter-url="{% url 'update_movie_poster' m.pk %}"
+
+                                        data-play-url="{% url 'movie_play' m.pk %}"
+                                        data-detail-url="{% url 'movie_detail' m.pk %}"
+                                        data-edit-url="{% url 'movie_edit' m.pk %}"
+                                        data-delete-url="{% url 'movie_delete' m.pk %}"
+                                    >
+                                        <div class="card h-100 bg-dark border-secondary">
+
+                                            <div class="ratio-2x3">
+                                                {% if m.locandina_url %}
+                                                    <img src="{{ m.locandina_url }}"
+                                                        class="poster-img"
+                                                        alt="{{ m.titolo }}">
+                                                {% else %}
+                                                    <div class="poster-placeholder d-flex align-items-center justify-content-center">
+                                                        <span class="small text-center px-2">
+                                                            {{ m.titolo }}
+                                                        </span>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+
+                                        </div>
+                                    </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                            {% else %}
+                                <p class="mt-3 mb-0 text-center">
+                                    Nessun film presente. Aggiungine uno dall'admin.
+                                </p>
+                            {% endif %}
+                            
+                            {% if is_paginated %}
+                                <nav class="mt-3">
+                                    <ul class="pagination pagination-sm justify-content-center">
+
+                                        {# Link pagina precedente #}
+                                        {% if page_obj.has_previous %}
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                                                    « Prec
+                                                </a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">« Prec</span>
+                                            </li>
+                                        {% endif %}
+
+                                        {# Numeri di pagina #}
+                                        {% for num in page_obj.paginator.page_range %}
+                                            {% if num == page_obj.number %}
+                                                <li class="page-item active" aria-current="page">
+                                                    <span class="page-link">
+                                                        {{ num }}
+                                                    </span>
+                                                </li>
+                                            {% else %}
+                                                <li class="page-item">
+                                                    <a class="page-link"
+                                                    href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ num }}">
+                                                        {{ num }}
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+
+                                        {# Link pagina successiva #}
+                                        {% if page_obj.has_next %}
+                                            <li class="page-item">
+                                                <a class="page-link"
+                                                href="?{% if base_query %}{{ base_query }}&{% endif %}page={{ page_obj.next_page_number }}">
+                                                    Succ »
+                                                </a>
+                                            </li>
+                                        {% else %}
+                                            <li class="page-item disabled">
+                                                <span class="page-link">Succ »</span>
+                                            </li>
+                                        {% endif %}
+
+                                    </ul>
+                                </nav>
+                            {% endif %}
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <!-- Modal dettaglio film -->
+    <div class="modal fade" id="movieModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content bg-dark text-light border-secondary">
+        <div class="modal-header border-secondary">
+            <h5 class="modal-title"></h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+
+            <div class="row">
+            <div class="col-12 col-md-4 mb-3">
+                <img data-role="poster"
+                    src=""
+                    alt=""
+                    class="img-fluid rounded shadow d-none">
+                <div data-role="poster-placeholder"
+                    class="bg-secondary d-flex align-items-center justify-content-center rounded w-100 d-none"
+                    style="padding-top:150%;">
+                <span class="small text-center px-2">
+                    Nessuna locandina disponibile
+                </span>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-8 d-flex flex-column">
+                <p class="mb-1"><strong>Anno:</strong> <span data-role="anno"></span></p>
+                <p class="mb-1"><strong>Genere:</strong> <span data-role="genere"></span></p>
+                <p class="mb-1"><strong>Regista:</strong> <span data-role="regista"></span></p>
+                <p class="mb-1"><strong>Visto:</strong> <span data-role="visto"></span></p>
+                <p class="mb-3"><strong>Voto:</strong> <span data-role="voto"></span></p>
+
+                <!-- TRAMA -->
+                <div class="mb-3">
+                    <span class="text-secondary fw-semibold d-block mb-1">Trama:</span>
+                    <p class="small mb-0" data-role="trama"></p>
+                </div>
+
+                <p class="small mb-1">
+                <span class="text-secondary fw-semibold">Percorso file:</span><br>
+                <span data-role="percorso" class="text-light"></span>
+                </p>
+                <p class="small mb-1">
+                <span class="text-secondary fw-semibold">Dimensione:</span>
+                <span data-role="dimensione" class="text-light"></span> MB
+                </p>
+                <p class="small mb-3">
+                <span class="text-secondary fw-semibold">Codifica:</span>
+                <span data-role="codifica" class="text-light"></span>
+                </p>
+
+
+                <div class="mt-auto mb-2 d-flex flex-wrap gap-2 justify-content-end">
+
+                    <a data-role="play-btn" class="btn btn-primary btn-sm">
+                        ▶ Riproduci
+                    </a>
+
+                    <a data-role="edit-btn" class="btn btn-outline-info btn-sm">
+                        ✏ Modifica
+                    </a>
+
+                    <a data-role="updateposter-btn" href="#" class="btn btn-outline-warning btn-sm">
+                        🔄 Aggiorna metadati
+                    </a>
+
+                    <a data-role="delete-btn" class="btn btn-outline-danger btn-sm">
+                        🗑 Elimina
+                    </a>
+
+                </div>
+
+
+
+
+            </div>
+            </div>
+
+        </div>
+        </div>
+    </div>
+    </div>
+
+    
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    var movieModal = document.getElementById('movieModal');
+    if (!movieModal) return;
+
+    movieModal.addEventListener('show.bs.modal', function (event) {
+        var trigger = event.relatedTarget;
+        if (!trigger) return;
+
+        var title   = trigger.getAttribute('data-title') || '';
+        var anno    = trigger.getAttribute('data-anno')  || '';
+        var genere  = trigger.getAttribute('data-genere') || '';
+        var regista = trigger.getAttribute('data-regista') || '';
+        var visto   = trigger.getAttribute('data-visto') || '';
+        var voto    = trigger.getAttribute('data-voto') || '';
+        var percorso = trigger.getAttribute('data-percorso') || '';
+        var poster   = trigger.getAttribute('data-poster') || '';
+        var dimensione = trigger.getAttribute('data-dimensione') || '';
+        var codifica   = trigger.getAttribute('data-codifica') || '';
+        var trama     = trigger.getAttribute('data-trama') || '';
+
+        var playUrl        = trigger.getAttribute('data-play-url')   || '#';
+        var editUrl        = trigger.getAttribute('data-edit-url')   || '#';
+        var deleteUrl      = trigger.getAttribute('data-delete-url') || '#';
+        var updatePosterUrl = trigger.getAttribute('data-updateposter-url') || '#';
+
+
+        // Titolo modale
+        movieModal.querySelector('.modal-title').textContent = title;
+        
+
+        // Poster o placeholder
+        var posterImg = movieModal.querySelector('[data-role="poster"]');
+        var posterPlaceholder = movieModal.querySelector('[data-role="poster-placeholder"]');
+
+        if (poster) {
+        posterImg.src = poster;
+        posterImg.alt = title;
+        posterImg.classList.remove('d-none');
+        posterPlaceholder.classList.add('d-none');
+        } else {
+        posterImg.classList.add('d-none');
+        posterPlaceholder.classList.remove('d-none');
+        }
+
+        // Testi
+        movieModal.querySelector('[data-role="anno"]').textContent = anno || '-';
+        movieModal.querySelector('[data-role="genere"]').textContent = genere || '-';
+        movieModal.querySelector('[data-role="regista"]').textContent = regista || '-';
+
+        var vistoLabel = 'No';
+        if (visto === 'True' || visto === 'true' || visto === '1') {
+        vistoLabel = 'Sì';
+        }
+        movieModal.querySelector('[data-role="visto"]').textContent = vistoLabel;
+
+        movieModal.querySelector('[data-role="voto"]').textContent = voto || '-';
+        movieModal.querySelector('[data-role="trama"]').textContent = trama || '';
+        movieModal.querySelector('[data-role="percorso"]').textContent = percorso || '';
+        movieModal.querySelector('[data-role="dimensione"]').textContent = dimensione || '-';
+        movieModal.querySelector('[data-role="codifica"]').textContent = codifica || '-';
+
+
+        // Bottoni
+        movieModal.querySelector('[data-role="play-btn"]').href        = playUrl;
+        movieModal.querySelector('[data-role="edit-btn"]').href        = editUrl;
+        movieModal.querySelector('[data-role="delete-btn"]').href      = deleteUrl;
+        movieModal.querySelector('[data-role="updateposter-btn"]').href = updatePosterUrl;
+
+    });
+    });
+    </script>
+
+    <!-- (Opzionale) Bootstrap JS per componenti interattivi -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"
+    ></script>
+</body>
+</html>

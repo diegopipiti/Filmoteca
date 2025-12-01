@@ -1,0 +1,24 @@
+# Ambiente virtuale
+venv/
+
+# File Python compilati
+__pycache__/
+*.py[cod]
+
+# Database SQLite (se lo usi in locale)
+*.sqlite3
+
+# File temporanei / log
+*.log
+
+# Cartelle statiche generate
+staticfiles/
+media/
+
+# Configurazioni locali / segreti
+.env
+.vscode/
+
+# Varie
+.DS_Store
+Thumbs.db
