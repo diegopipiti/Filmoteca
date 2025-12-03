@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="it" x-data="{}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Catalogo Film{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+    <script src="https://unpkg.com/alpinejs@3.14.1" defer></script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        header { margin: 1rem 0; }
+        .film-card { display: grid; grid-template-columns: 110px 1fr; gap: 1rem; align-items: center; }
+        .poster { width: 100%; border-radius: 0.35rem; background: #f4f4f4; aspect-ratio: 2/3; object-fit: cover; }
+        .badge { padding: 0.25rem 0.6rem; border-radius: 999px; background: #e9ecf0; font-size: 0.85rem; }
+        .genre-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .filters { display: grid; grid-template-columns: 1fr 180px; gap: 0.75rem; align-items: center; }
+        @media (max-width: 720px) {
+            .filters { grid-template-columns: 1fr; }
+            .film-card { grid-template-columns: 90px 1fr; }
+        }
+    </style>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <main class="container">
+        <header>
+            <h1 style="margin-bottom: 0.2rem;">Catalogo Film</h1>
+            <p style="margin-top: 0; color: #556;">Ricerca, filtri veloci e interazioni dinamiche con HTMX.</p>
+        </header>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

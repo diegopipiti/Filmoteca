@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Catalogo Film{% endblock %}
+{% block content %}
+<section class="filters" hx-get="" hx-target="#film-grid" hx-trigger="keyup changed delay:250ms from:#search, change from:#watched">
+    <label for="search">
+        <span>Ricerca per titolo, regista o genere</span>
+        <input id="search" name="q" type="search" placeholder="Es. Blade Runner" value="{{ search }}" autocomplete="off">
+    </label>
+    <label for="watched">
+        <span>Stato di visione</span>
+        <select id="watched" name="watched">
+            <option value="" {% if not watched %}selected{% endif %}>Tutti</option>
+            <option value="yes" {% if watched == 'yes' %}selected{% endif %}>Visti</option>
+            <option value="no" {% if watched == 'no' %}selected{% endif %}>Da vedere</option>
+        </select>
+    </label>
+</section>
+
+<section id="film-grid" aria-live="polite" hx-trigger="load">
+    {% for film in object_list %}
+        <article class="film-card">
+            {% if film.poster_url %}
+                <img class="poster" src="{{ film.poster_url }}" alt="Locandina di {{ film.title }}">
+            {% else %}
+                <div class="poster"></div>
+            {% endif %}
+            <div>
+                <header style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;">
+                    <div>
+                        <h2 style="margin:0;">{{ film.title }}</h2>
+                        <small style="color:#667;">
+                            {% if film.year %}{{ film.year }}{% endif %}
+                            {% if film.year and film.director %} • {% endif %}
+                            {% if film.director %}{{ film.director.name }}{% endif %}
+                        </small>
+                    </div>
+                    {% if film.watched %}
+                        <span class="badge" style="background:#def5e5;color:#0e7e4a;">Visto</span>
+                    {% else %}
+                        <span class="badge">Da vedere</span>
+                    {% endif %}
+                </header>
+                <div class="genre-list" style="margin:0.5rem 0 0.35rem;">
+                    {% for genre in film.genres.all %}
+                        <span class="badge">{{ genre.name }}</span>
+                    {% empty %}
+                        <small style="color:#99a;">Nessun genere indicato</small>
+                    {% endfor %}
+                </div>
+                {% if film.rating %}
+                    <p style="margin:0;">Voto: <strong>{{ film.rating }}</strong>/10</p>
+                {% endif %}
+                {% if film.notes %}
+                    <p style="margin-top:0.35rem;">{{ film.notes }}</p>
+                {% endif %}
+            </div>
+        </article>
+        <hr>
+    {% empty %}
+        <p>Nessun film trovato.</p>
+    {% endfor %}
+</section>
+{% endblock %}
