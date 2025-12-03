@@ -7,6 +7,7 @@ import requests
 from django.db.models import Q
 import random
 from typing import Optional, Tuple
+import sys
 
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
@@ -17,6 +18,7 @@ from .models import Movie
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from typing import Optional
+from .models import Movie
 
 VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".mpg", ".mpeg"]
 
@@ -378,30 +380,39 @@ def _apri_file(path: str):
 
 
 def movie_play(request, pk):
-    """Vista che apre il film e poi torna alla lista."""
     movie = get_object_or_404(Movie, pk=pk)
-    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
+    file_path = movie.percorso  # percorso completo sul disco
 
-    if not os.path.exists(movie.percorso):
-        return HttpResponse("File non trovato: " + movie.percorso, status=404)
+    if not file_path:
+        messages.error(request, "Nessun percorso file è stato salvato per questo film.")
+        return redirect("movie_list")
+
+    file_path = os.path.normpath(file_path)
+
+    if not os.path.exists(file_path):
+        messages.error(
+            request, f"Il file non è stato trovato nel percorso salvato:\n{file_path}"
+        )
+        return redirect("movie_list")
 
     try:
-        _apri_file(movie.percorso)
+        if sys.platform.startswith("win"):
+            subprocess.Popen(["cmd", "/c", "start", "", file_path], shell=True)
+        elif sys.platform.startswith("darwin"):
+            subprocess.Popen(["open", file_path])
+        else:
+            subprocess.Popen(["xdg-open", file_path])
+
+        # QUI NON METTIAMO NESSUN MESSAGGIO DI SUCCESSO
+
     except Exception as e:
-        return HttpResponse(f"Errore aprendo il file: {e}", status=500)
+        messages.error(request, f"Errore nell'aprire il file:\n{e}")
 
-    if is_ajax:
-        # Per le chiamate AJAX non reindirizziamo: evitiamo refresh e scroll
-        return HttpResponse(status=204)
-
-    # Dopo aver lanciato il player, torna alla pagina di provenienza (se sicura)
-    next_url = request.GET.get("next") or request.META.get("HTTP_REFERER")
-    if next_url and url_has_allowed_host_and_scheme(
-        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
-    ):
+    # Torna alla pagina precedente (di solito la lista) oppure alla lista
+    next_url = request.META.get("HTTP_REFERER")
+    if next_url:
         return redirect(next_url)
-
-    return redirect(reverse("movie_list"))
+    return redirect("movie_list")
 
 
 def scan_folder(request):
@@ -466,7 +477,30 @@ def scan_folder(request):
 
 def movie_detail(request, pk):
     movie = get_object_or_404(Movie, pk=pk)
-    return render(request, "catalogo/movie_detail.html", {"movie": movie})
+
+    # stesso ordinamento della lista (titolo)
+    qs = Movie.objects.order_by("titolo").values_list("pk", flat=True)
+    ids = list(qs)
+
+    prev_movie = None
+    next_movie = None
+
+    if movie.pk in ids:
+        idx = ids.index(movie.pk)
+        if idx > 0:
+            prev_movie = Movie.objects.get(pk=ids[idx - 1])
+        if idx < len(ids) - 1:
+            next_movie = Movie.objects.get(pk=ids[idx + 1])
+
+    return render(
+        request,
+        "catalogo/movie_detail.html",
+        {
+            "movie": movie,
+            "prev_movie": prev_movie,
+            "next_movie": next_movie,
+        },
+    )
 
 
 def movie_edit(request, pk):
@@ -654,14 +688,6 @@ def update_posters(request):
         messages.info(request, "Nessun campo aggiornato: i dati erano già presenti.")
 
     return redirect("movie_list")
-
-
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib import messages
-
-# importa anche la funzione che usi per chiamare TMDB
-# ad es.: from .tmdb import fetch_movie_data_from_tmdb
-# (adatta il nome al tuo progetto)
 
 
 def update_movie_poster(request, pk):

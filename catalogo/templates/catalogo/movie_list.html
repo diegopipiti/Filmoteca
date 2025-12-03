@@ -323,14 +323,35 @@
                             </a>
 
                             <!-- ALTRE INFO -->
+                            <!-- ALTRE INFO -->
                             <button type="button"
                                     class="amb-btn amb-btn-info"
                                     data-bs-toggle="modal"
                                     data-bs-target="#movieModal"
-                                    data-movie-id="{{ random_movie.pk }}">
+
+                                    data-movie-id="{{ random_movie.pk }}"
+                                    data-title="{{ random_movie.titolo }}"
+                                    data-anno="{{ random_movie.anno }}"
+                                    data-genere="{{ random_movie.genere }}"
+                                    data-regista="{{ random_movie.regista }}"
+                                    data-visto="{{ random_movie.visto }}"
+                                    data-voto="{{ random_movie.voto }}"
+                                    data-percorso="{{ random_movie.percorso }}"
+                                    data-poster="{{ random_movie.locandina_url }}"
+                                    data-dimensione="{{ random_movie.dimensione_file_mb }}"
+                                    data-codifica="{{ random_movie.codifica }}"
+                                    data-trama="{{ random_movie.trama|default_if_none:'' }}"
+
+                                    data-updateposter-url="{% url 'update_movie_poster' random_movie.pk %}"
+                                    data-play-url="{% url 'movie_play' random_movie.pk %}"
+                                    data-detail-url="{% url 'movie_detail' random_movie.pk %}"
+                                    data-edit-url="{% url 'movie_edit' random_movie.pk %}"
+                                    data-delete-url="{% url 'movie_delete' random_movie.pk %}"
+                            >
                                 <span class="amb-btn-icon-info">i</span>
                                 <span>Altre info</span>
                             </button>
+
                         </div>
 
                     </div>
@@ -348,12 +369,27 @@
                 <!-- Titolo sezione -->
                 <div class="col-12">
                     <div class="d-flex flex-column mb-3 mt-4">
-                        <h2 class="text-light fw-bold mb-0" style="font-size: 1.4rem;">
-                            La tua collezione
-                        </h2>
-                        <span class="text-secondary small">
-                            {{ page_obj.paginator.count }} titoli totali
-                        </span>
+                        
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <h2 class="text-light fw-bold mb-0" style="font-size: 1.4rem;">
+                                    La tua collezione
+                                </h2>
+                                <span class="text-secondary small">
+                                    {{ page_obj.paginator.count }} titoli totali
+                                </span>
+                            </div>
+
+                            {% if movies %}
+                                <div class="d-none d-md-block">
+                                    <a href="{% url 'movie_detail' movies.0.pk %}"
+                                    class="btn btn-outline-light btn-sm">
+                                        📖 Vista dettagliata
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+
                     </div>
                 </div>
 
