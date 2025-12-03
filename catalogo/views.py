@@ -11,6 +11,8 @@ from typing import Optional, Tuple
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from .models import Movie
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
@@ -378,6 +380,7 @@ def _apri_file(path: str):
 def movie_play(request, pk):
     """Vista che apre il film e poi torna alla lista."""
     movie = get_object_or_404(Movie, pk=pk)
+    is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
 
     if not os.path.exists(movie.percorso):
         return HttpResponse("File non trovato: " + movie.percorso, status=404)
@@ -387,8 +390,18 @@ def movie_play(request, pk):
     except Exception as e:
         return HttpResponse(f"Errore aprendo il file: {e}", status=500)
 
-    # Dopo aver lanciato il player, torna alla lista
-    return redirect("movie_list")
+    if is_ajax:
+        # Per le chiamate AJAX non reindirizziamo: evitiamo refresh e scroll
+        return HttpResponse(status=204)
+
+    # Dopo aver lanciato il player, torna alla pagina di provenienza (se sicura)
+    next_url = request.GET.get("next") or request.META.get("HTTP_REFERER")
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return redirect(next_url)
+
+    return redirect(reverse("movie_list"))
 
 
 def scan_folder(request):
@@ -458,12 +471,23 @@ def movie_detail(request, pk):
 
 def movie_edit(request, pk):
     movie = get_object_or_404(Movie, pk=pk)
+    next_url = (
+        request.POST.get("next")
+        or request.GET.get("next")
+        or request.META.get("HTTP_REFERER")
+    )
+    if next_url and not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = None
 
     if request.method == "POST":
         form = MovieForm(request.POST, instance=movie)
         if form.is_valid():
             form.save()
             messages.success(request, "Film aggiornato con successo.")
+            if next_url:
+                return redirect(next_url)
             return redirect("movie_list")
     else:
         form = MovieForm(instance=movie)
@@ -474,6 +498,7 @@ def movie_edit(request, pk):
         {
             "form": form,
             "movie": movie,
+            "next": next_url,
         },
     )
 
@@ -628,6 +653,59 @@ def update_posters(request):
     else:
         messages.info(request, "Nessun campo aggiornato: i dati erano già presenti.")
 
+    return redirect("movie_list")
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+
+# importa anche la funzione che usi per chiamare TMDB
+# ad es.: from .tmdb import fetch_movie_data_from_tmdb
+# (adatta il nome al tuo progetto)
+
+
+def update_movie_poster(request, pk):
+    """
+    Aggiorna locandina e metadati per UN singolo film,
+    usando TMDB (stessa logica di update_posters ma one-shot).
+    """
+    movie = get_object_or_404(Movie, pk=pk)
+
+    # qui usiamo la stessa funzione che usi in update_posters
+    # supponiamo che ritorni un dizionario con i dati, oppure None se non trova nulla
+    tmdb_data = fetch_movie_data_from_tmdb(movie.titolo, movie.anno)
+
+    if not tmdb_data:
+        messages.warning(
+            request, f"Nessun risultato trovato su TMDB per '{movie.titolo}'."
+        )
+        return redirect("movie_list")
+
+    # Adatta questi campi a come hai strutturato la risposta TMDB
+    poster_url = tmdb_data.get("poster_url")
+    trama = tmdb_data.get("overview") or tmdb_data.get("trama")
+    anno = tmdb_data.get("year") or tmdb_data.get("anno")
+    regista = tmdb_data.get("director") or tmdb_data.get("regista")
+    genere = tmdb_data.get("genres") or tmdb_data.get("genere")
+
+    if poster_url:
+        movie.locandina_url = poster_url
+    if trama:
+        movie.trama = trama
+    if anno:
+        movie.anno = anno
+    if regista:
+        movie.regista = regista
+    if genere:
+        # se genres è una lista, uniscila
+        if isinstance(genere, (list, tuple)):
+            movie.genere = ", ".join(genere)
+        else:
+            movie.genere = genere
+
+    movie.save()
+
+    messages.success(request, f"Metadati aggiornati per '{movie.titolo}'.")
     return redirect("movie_list")
 
 

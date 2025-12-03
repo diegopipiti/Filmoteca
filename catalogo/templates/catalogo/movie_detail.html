@@ -95,11 +95,11 @@
 
                 <!-- QUI RESTANO I BOTTONI -->
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="{% url 'movie_play' movie.pk %}" class="btn btn-primary btn-sm">
+                    <a href="{% url 'movie_play' movie.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-primary btn-sm">
                         ▶ Riproduci
                     </a>
 
-                    <a href="{% url 'movie_edit' movie.pk %}" class="btn btn-outline-light btn-sm">
+                    <a href="{% url 'movie_edit' movie.pk %}?next={{ request.get_full_path|urlencode }}" class="btn btn-outline-light btn-sm">
                         ✏ Modifica
                     </a>
 

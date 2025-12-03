@@ -1,0 +1,649 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Ambassador – {% block title %}{% endblock %}</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <style>
+        /* --- TUTTO IL TUO CSS CONDIVISO STA QUI --- */
+
+        /* Poster grandi in stile Netflix */
+        .ratio-2x3 {
+            position: relative;
+            width: 100%;
+            padding-top: 150%; /* rapporto 2:3 */
+            overflow: hidden;
+            border-radius: 12px;
+            background-color: #333;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        /* Effetto hover cinematografico */
+        .ratio-2x3:hover {
+            transform: scale(1.06);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+            z-index: 5;
+        }
+
+
+        .poster-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .poster-placeholder {
+            position: absolute;
+            inset: 0;
+        }
+
+        /* NAVBAR AMBASSADOR – look cinema elegante */
+        .navbar-filmoteca {
+            background: radial-gradient(circle at top left, #2b2320 0, #080808 42%, #050505 100%);
+            background-color: rgba(5, 5, 5, 0.96); /* fallback */
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 14px 35px rgba(0, 0, 0, 0.75);
+            padding-top: 0.15rem;
+            padding-bottom: 0.15rem;
+            height: 82px;
+            overflow: visible;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        /* Logo un po’ più importante */
+        .brand-logo-img {
+            height: 148px;
+            width: auto;
+            object-fit: contain;
+            display: block;
+        }
+
+        /* Testo AMBASSADOR con effetto dorato leggero */
+        .brand-text {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            background: linear-gradient(120deg, #f8e9b0, #f2c14f, #f6f0d0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Link della navbar: sottili, eleganti */
+        .navbar-filmoteca .nav-link {
+            position: relative;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: rgba(245,245,245,0.8);
+            padding: 0;
+            margin-right: 1.4rem;
+            text-transform: none;
+            letter-spacing: 0.04em;
+            transition: color 0.18s ease;
+        }
+
+        /* Linea dorata sotto il link al passaggio */
+        .navbar-filmoteca .nav-link::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -0.35rem;
+            width: 0;
+            height: 2px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #f7d26a, #f0b544);
+            transition: width 0.22s ease;
+        }
+
+        /* Hover + active = colore più chiaro + underline */
+        .navbar-filmoteca .nav-link:hover,
+        .navbar-filmoteca .nav-link.active {
+            color: #ffffff;
+        }
+
+        .navbar-filmoteca .nav-link:hover::after,
+        .navbar-filmoteca .nav-link.active::after {
+            width: 100%;
+        }
+
+        /* Bottoni tipo “Admin” nella nav */
+        .navbar-filmoteca .btn {
+            font-size: 0.8rem;
+            border-radius: 999px;
+        }
+
+        .navbar-brand {
+            padding-top: 0;
+            padding-bottom: 0;
+            margin-right: 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Search pill rivista, più sottile e pulita */
+        .search-pill {
+            border-radius: 999px;
+            background-color: rgba(0, 0, 0, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            overflow: hidden;
+        }
+
+        .search-icon {
+            background: transparent;
+            border: none;
+            color: rgba(245,245,245,0.8);
+            padding-left: 10px;
+            padding-right: 4px;
+            font-size: 0.9rem;
+        }
+
+        .search-input {
+            border: none !important;
+            background: transparent;
+            color: #f5f5f5;
+            box-shadow: none !important;
+            font-size: 0.85rem;
+        }
+
+        .search-input::placeholder {
+            color: rgba(245,245,245,0.55);
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+        /* Su schermi piccoli la nav diventa piena */
+        @media (max-width: 991.98px) {
+            .navbar-filmoteca {
+                background-color: rgba(0,0,0,0.98);
+                padding-top: 0.4rem;
+                padding-bottom: 0.4rem;
+            }
+
+            .navbar-filmoteca .nav-link {
+                margin-right: 0;
+                padding-top: 0.3rem;
+                padding-bottom: 0.3rem;
+            }
+        }
+        
+        .poster-wrapper {
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.18s ease, box-shadow 0.25s ease;
+        }
+
+        .poster-wrapper:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+        }
+
+
+        /* Paginazione stile AMBASSADOR: oro + nero, pillole moderne */
+        .amb-pagination {
+            gap: 0.35rem;
+        }
+
+        .amb-pagination .page-item .page-link {
+            background: transparent;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #f5f5f5;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            min-width: 2rem;
+            text-align: center;
+            transition:
+                background-color 0.2s ease,
+                color 0.2s ease,
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                transform 0.1s ease;
+        }
+
+        .amb-pagination .page-item .page-link:hover {
+            border-color: #f2c14f;
+            color: #f2c14f;
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+        .amb-pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, #f7d26a, #f0b544);
+            border-color: transparent;
+            color: #111111;
+            box-shadow: 0 0 12px rgba(242, 193, 79, 0.45);
+        }
+
+        .amb-pagination .page-item.disabled .page-link {
+            border-color: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.35);
+            opacity: 0.6;
+        }
+
+        .amb-pagination .page-link:focus {
+            box-shadow: none;
+            outline: none;
+        }
+
+        /* Bottoni del banner AMBASSADOR */
+        .amb-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            padding: 0.55rem 1.4rem;
+            border-radius: 4px;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition:
+                background-color 0.15s ease,
+                color 0.15s ease,
+                transform 0.05s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .amb-btn-play {
+            background-color: #ffffff;
+            color: #111111;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.35);
+        }
+
+        .amb-btn-play:hover {
+            background-color: #e6e6e6;
+            color: #000000;
+            transform: translateY(-1px);
+        }
+
+        .amb-btn-info {
+            background-color: rgba(109, 109, 110, 0.85);
+            color: #f5f5f5;
+        }
+
+        .amb-btn-info:hover {
+            background-color: rgba(140, 140, 141, 0.95);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .amb-btn-icon-play {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            border-left: 11px solid #111111;
+        }
+
+        .amb-btn-icon-info {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            line-height: 1;
+            color: #f5f5f5;
+        }
+
+        .amb-btn:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+            /* Contenitore griglia: niente padding laterale */
+        .catalogo-grid {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        /* FRECCE DEL BANNER — invisibili finché non si fa hover */
+        .random-banner {
+            position: relative;
+        }
+
+        .banner-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+
+            background: rgba(0,0,0,0.45);
+            border: none;
+            color: white;
+
+            font-size: 2.5rem;
+            padding: 0.2rem 0.6rem;
+
+            cursor: pointer;
+            border-radius: 6px;
+
+            opacity: 0;                   /* FRECCIA NASCOSTA */
+            pointer-events: none;         /* DISABILITATA */
+            transition:
+                opacity 0.3s ease,
+                background-color 0.15s ease,
+                transform 0.1s ease;
+        }
+
+        /* Quando si passa col mouse sul banner → frecce visibili */
+        .random-banner:hover .banner-arrow {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .banner-arrow:hover {
+            background: rgba(255,255,255,0.75);
+            color: black;
+            transform: translateY(-50%) scale(1.15);
+        }
+
+        .banner-arrow-left {
+            left: 12px;
+        }
+
+        .banner-arrow-right {
+            right: 12px;
+        }
+
+        /* Effetto hover locandine stile Netflix */
+.poster-wrapper {
+    border-radius: 6px;
+    overflow: hidden;
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        filter 0.25s ease;
+}
+
+/* Effetto quando si passa il mouse sopra */
+.poster-wrapper:hover {
+    transform: scale(1.08); /* zoom elegante */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.55);
+    filter: brightness(1.15); /* leggero aumento luminosità */
+}
+
+/* Per rendere l’immagine più morbida */
+.poster-img {
+    transition: transform 0.35s ease, filter 0.35s ease;
+}
+
+.poster-wrapper:hover .poster-img {
+    transform: scale(1.03); /* zoom dell’immagine */
+    filter: contrast(1.1);
+ }
+
+        /* Pulsantiera modale film: stile coerente col tema */
+        .movie-modal-actions .btn {
+            border-radius: 999px;
+            font-weight: 600;
+            padding: 0.45rem 0.9rem;
+            border-width: 1px;
+            transition: transform 0.08s ease, box-shadow 0.18s ease, filter 0.12s ease;
+            color: #f5f5f5 !important;
+        }
+
+        .movie-modal-actions [data-role="play-btn"] {
+            background: linear-gradient(135deg, #f7d26a, #f0b544);
+            color: #111;
+            border-color: transparent;
+            box-shadow: 0 0 12px rgba(242, 193, 79, 0.35);
+        }
+        .movie-modal-actions [data-role="play-btn"]:hover {
+            filter: brightness(0.95);
+            transform: translateY(-1px);
+        }
+
+        .movie-modal-actions [data-role="edit-btn"],
+        .movie-modal-actions [data-role="updateposter-btn"] {
+            background: rgba(255,255,255,0.05) !important;
+            color: #f5f5f5 !important;
+            border-color: rgba(255,255,255,0.18) !important;
+        }
+        .movie-modal-actions [data-role="edit-btn"]:hover,
+        .movie-modal-actions [data-role="updateposter-btn"]:hover {
+            border-color: #f7d26a !important;
+            color: #f7d26a !important;
+            transform: translateY(-1px);
+        }
+
+        .movie-modal-actions [data-role="delete-btn"] {
+            background: rgba(220,53,69,0.15) !important;
+            color: #f8d7da !important;
+            border-color: rgba(220,53,69,0.6) !important;
+        }
+        .movie-modal-actions [data-role="delete-btn"]:hover {
+            background: rgba(220,53,69,0.25) !important;
+            color: #fff !important;
+            transform: translateY(-1px);
+        }
+
+        /* Stelle rating */
+        .rating-stars {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .rating-stars .star {
+            position: relative;
+            width: 16px;
+            height: 16px;
+            font-size: 16px;
+            line-height: 1;
+            color: #f7d26a;
+            display: inline-block;
+        }
+        .rating-stars .star::before {
+            content: "★";
+        }
+        .rating-stars .star.empty {
+            color: #5a5a5a;
+        }
+        .rating-stars .star.half {
+            color: #5a5a5a;
+        }
+        .rating-stars .star.half::after {
+            content: "★";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 50%;
+            overflow: hidden;
+            color: #f7d26a;
+        }
+
+        /* Pannello form film */
+        .movie-form-panel {
+            background: linear-gradient(145deg, rgba(17,17,17,0.92), rgba(26,26,26,0.92));
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px;
+            padding: 1.8rem;
+            box-shadow: 0 16px 45px rgba(0,0,0,0.45);
+        }
+
+        .movie-form-panel h1 {
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .movie-form-panel .form-label {
+            font-weight: 600;
+            color: #f5f5f5;
+            margin-bottom: 0.35rem;
+        }
+
+        .movie-form-panel input,
+        .movie-form-panel select,
+        .movie-form-panel textarea {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.14);
+            color: #f5f5f5;
+            border-radius: 10px;
+            padding: 0.55rem 0.75rem;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .movie-form-panel input:focus,
+        .movie-form-panel select:focus,
+        .movie-form-panel textarea:focus {
+            outline: none;
+            border-color: #f7d26a;
+            box-shadow: 0 0 0 2px rgba(247, 210, 106, 0.25);
+        }
+
+        .movie-form-panel .form-text {
+            color: rgba(245,245,245,0.7);
+        }
+
+        .movie-form-panel .form-check-input {
+            width: 1.15rem;
+            height: 1.15rem;
+            min-width: 1.15rem;
+            margin-top: 0.15rem;
+            margin-right: 0.45rem;
+            display: inline-block;
+            vertical-align: middle;
+            background-color: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.18);
+        }
+
+        .movie-form-panel .form-check-input:checked {
+            background-color: #f7d26a;
+            border-color: #f7d26a;
+        }
+
+        .movie-form-panel .form-check-label {
+            margin-top: 0.05rem;
+        }
+
+        .movie-form-poster {
+            max-width: 360px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .movie-form-poster .ratio-2x3 {
+            border-radius: 16px;
+            box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+        }
+
+
+    </style>
+
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body class="bg-dark text-light">
+
+    <!-- NAVBAR UNICA PER TUTTA L'APP -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-filmoteca px-1 py-0">
+        <div class="container-fluid">
+
+            <a class="navbar-brand d-flex align-items-center brand-ambassador me-5"
+               href="{% url 'movie_list' %}">
+                <img src="{% static 'catalogo/logo.png' %}"
+                     alt="Ambassador Logo"
+                     class="brand-logo-img me-2">
+            </a>
+
+            <button class="navbar-toggler border-0 shadow-none" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                    aria-controls="navbarMain" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 gap-3">
+                    <li class="nav-item">
+                        <a class="nav-link{% block nav_home_active %}{% endblock %}"
+                           href="{% url 'movie_list' %}">
+                            Home
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="#"
+                           data-bs-toggle="modal"
+                           data-bs-target="#filterModal">
+                            Filtri
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="#"
+                           data-bs-toggle="modal"
+                           data-bs-target="#scanModal">
+                            Scansiona dischi
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link"
+                           href="#"
+                           data-bs-toggle="modal"
+                           data-bs-target="#metadataModal">
+                            Aggiorna metadati
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/">
+                            Admin
+                        </a>
+                    </li>
+                </ul>
+
+                <!-- Barra di ricerca globale -->
+                <form class="d-flex align-items-center" method="get"
+                      action="{% url 'movie_list' %}">
+                    <div class="input-group input-group-sm search-pill">
+                        <span class="input-group-text search-icon">
+                            &#128269;
+                        </span>
+                        <input type="search"
+                               name="titolo"
+                               class="form-control search-input"
+                               placeholder="Cerca titolo..."
+                               value="{{ filtri.titolo|default:'' }}">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-fluid px-1 px-lg-2 my-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -80,6 +80,14 @@ DATABASES = {
     }
 }
 
+# -------------------------
+# STATIC FILES SETTINGS
+# -------------------------
+
+STATIC_URL = "/static/"
+
+STATICFILES_DIRS = []
+STATIC_ROOT = BASE_DIR / "staticfiles"  # utile per il deploy, non influisce in locale
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

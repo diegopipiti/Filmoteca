@@ -34,7 +34,7 @@
                     <form method="post">
                         {% csrf_token %}
                         <div class="d-flex justify-content-between">
-                            <a href="{% url 'movie_detail' movie.pk %}"
+                            <a href="{% url 'movie_list' %}?open={{ movie.pk }}"
                                class="btn btn-outline-light btn-sm">
                                 Annulla
                             </a>
