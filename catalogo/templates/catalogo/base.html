@@ -11,6 +11,8 @@
         rel="stylesheet"
     >
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
     <style>
         /* --- TUTTO IL TUO CSS CONDIVISO STA QUI --- */
 
@@ -587,6 +589,106 @@
             right: 12px;
         }
 
+            
+        .bg-amb-light {
+            background: linear-gradient(135deg, #f7d26a, #f0b544);
+            color: #111 !important;
+        }
+
+        .bg-amb-dark {
+            background-color: rgba(255,255,255,0.15);
+            backdrop-filter: blur(3px);
+            color: #fff !important;
+        }
+
+        /* Stelline */
+        .rating-stars .star {
+            width: 18px;
+            height: 18px;
+            margin-right: 2px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-image: url('/static/catalogo/star_full.png');
+            filter: drop-shadow(0 0 2px rgba(255,255,255,0.4));
+        }
+        .rating-stars .star.half {
+            background-image: url('/static/catalogo/star_half.png');
+        }
+        .rating-stars .star.empty {
+            background-image: url('/static/catalogo/star_empty.png');
+        }
+
+            /* Pulsante circolare minimal (stile Netflix) */
+        .amb-circle-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 1.2rem;
+        }
+
+        .amb-circle-btn:hover {
+            border-color: white;
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.08);
+        }
+
+        /* Variante rossa per elimina */
+        .amb-danger {
+            border-color: rgba(255, 80, 80, 0.5);
+            color: #ff4d4d;
+        }
+
+        .amb-danger:hover {
+            border-color: #ff4d4d;
+            background: rgba(255, 0, 0, 0.2);
+        }
+
+        /* Pulsante play più evidente */
+        .amb-play {
+            background: white;
+            color: black;
+            border-color: white;
+        }
+
+        .amb-play:hover {
+            background: #e6e6e6;
+            border-color: #e6e6e6;
+        }
+
+        /* ============================= */
+        /* Tooltip stile Netflix         */
+        /* ============================= */
+
+        /* TEST: cambiamo brutalmente lo stile dei tooltip su QUESTA PAGINA */
+        .tooltip .tooltip-inner {
+            background-color: rgba(20, 20, 20, 0.96) !important;
+            color: #ffffff !important;
+            padding: 6px 10px !important;
+            border-radius: 6px !important;
+            font-size: 0.82rem;
+            font-weight: 500;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.45);
+        }
+
+        /* freccia sopra */
+        .tooltip.bs-tooltip-top .tooltip-arrow::before,
+        .tooltip.bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
+            border-top-color: rgba(20, 20, 20, 0.96) !important;
+        }
+
+        /* freccia sotto (per sicurezza) */
+        .tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+        .tooltip.bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before {
+            border-bottom-color: rgba(20, 20, 20, 0.96) !important;
+        }
 
     </style>
 
@@ -683,6 +785,19 @@
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">
     </script>
 
-    {% block extra_js %}{% endblock %}
+    {% block extra_js %}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Abilita tutti i tooltip Bootstrap
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (el) {
+                return new bootstrap.Tooltip(el);
+            });
+        });
+    </script>
+
+    
+    {% endblock %}
 </body>
 </html>

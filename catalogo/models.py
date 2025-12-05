@@ -32,5 +32,10 @@ class Movie(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(10)], null=True, blank=True
     )
 
+    recensione = models.TextField(blank=True, null=True, verbose_name="Recensione")
+    ultima_visione = models.DateField(
+        blank=True, null=True, verbose_name="Data ultima visione"
+    )
+
     def __str__(self):
         return f"{self.titolo} ({self.anno})"

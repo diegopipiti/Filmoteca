@@ -564,26 +564,68 @@
                 </p>
 
 
-                                <div class="mt-auto mb-2 d-flex flex-wrap gap-2 justify-content-end movie-modal-actions">
+                <div class="mt-auto mb-3 d-flex flex-wrap gap-3 justify-content-end">
 
-                    <a data-role="play-btn" class="btn btn-sm d-inline-flex align-items-center gap-1">
-                        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;">
-                            <polygon points="3,2 11,7 3,12" fill="#111"/>
-                        </svg>
-                        <span>Riproduci</span>
+                    <!-- Riproduci -->
+                    <a
+                        data-role="play-btn"
+                        class="amb-circle-btn amb-play"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        data-bs-custom-class="amb-tooltip"
+                        data-bs-title="Riproduci"
+                    >
+                        <i class="bi bi-play-fill"></i>
                     </a>
 
-                    <a data-role="edit-btn" class="btn btn-sm">
-                        <span>Modifica</span>
+                    <!-- Scheda completa -->
+                        <a 
+                        data-role="detail-btn" 
+                        class="amb-circle-btn" 
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        data-bs-custom-class="amb-tooltip" 
+                        data-bs-title="Apri la scheda"
+                        >
+                        <i class="bi bi-card-list"></i>
                     </a>
 
-                    <a data-role="updateposter-btn" href="#" class="btn btn-sm">
-                        <span>Aggiorna metadati</span>
+                    <!-- Modifica -->
+                    <a
+                        data-role="edit-btn"
+                        class="amb-circle-btn amb-edit"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="top"
+                        data-bs-custom-class="amb-tooltip"
+                        data-bs-title="Modifica scheda"
+                    >
+                        <i class="bi bi-pencil"></i>
                     </a>
 
-                    <a data-role="delete-btn" class="btn btn-sm">
-                        <span>Elimina</span>
+                    <!-- Aggiorna -->
+                    <a data-role="updateposter-btn" 
+                        class="amb-circle-btn" 
+                        data-bs-toggle="tooltip" 
+                        data-bs-placement="top"
+                        data-bs-custom-class="amb-tooltip"
+                        data-bs-title="Aggiorna metadati"
+                    >
+                        <i class="bi bi-arrow-repeat"></i>
                     </a>
+
+                    <!-- Elimina -->
+                    <a data-role="delete-btn" 
+                        class="amb-circle-btn amb-danger" 
+                        data-bs-toggle="tooltip" 
+                        data-bs-placement="top"
+                        data-bs-custom-class="amb-tooltip"
+                        data-bs-title="Elimina"
+                    >
+                    <i class="bi bi-trash"></i>
+                    </a>
+
+                </div>
+
 
                 </div>
 
@@ -596,85 +638,110 @@
     </div>
 {% endblock %}
 
+
+
+
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    var movieModal = document.getElementById('movieModal');
-    if (!movieModal) return;
+    document.addEventListener('DOMContentLoaded', function () {
 
-    function renderStars(container, voto10) {
-        var voto = parseFloat(voto10);
-        if (isNaN(voto)) {
-            container.innerHTML = '';
-            return;
-        }
-        var stars = Math.max(0, Math.min(5, voto / 2));
-        var full = Math.floor(stars);
-        var half = (stars - full) >= 0.5 ? 1 : 0;
-        var empty = 5 - full - half;
-        var html = '';
-        for (var i = 0; i < full; i++) html += '<span class="star"></span>';
-        if (half) html += '<span class="star half"></span>';
-        for (var i = 0; i < empty; i++) html += '<span class="star empty"></span>';
-        container.innerHTML = html;
-    }
+        // 1) Inizializza TUTTI i tooltip della pagina
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (el) {
+            return new bootstrap.Tooltip(el);
+        });
 
-    movieModal.addEventListener('show.bs.modal', function (event) {
-        var trigger = event.relatedTarget;
-        if (!trigger) return;
+        // 2) Tutto il resto (modale, ecc.)
+        var movieModal = document.getElementById('movieModal');
+        if (!movieModal) return;
 
-        var title   = trigger.getAttribute('data-title') || '';
-        var anno    = trigger.getAttribute('data-anno')  || '';
-        var genere  = trigger.getAttribute('data-genere') || '';
-        var regista = trigger.getAttribute('data-regista') || '';
-        var visto   = trigger.getAttribute('data-visto') || '';
-        var voto    = trigger.getAttribute('data-voto') || '';
-        var percorso = trigger.getAttribute('data-percorso') || '';
-        var poster   = trigger.getAttribute('data-poster') || '';
-        var dimensione = trigger.getAttribute('data-dimensione') || '';
-        var codifica   = trigger.getAttribute('data-codifica') || '';
-        var trama     = trigger.getAttribute('data-trama') || '';
-
-        var playUrl        = trigger.getAttribute('data-play-url')   || '#';
-        var editUrl        = trigger.getAttribute('data-edit-url')   || '#';
-        var deleteUrl      = trigger.getAttribute('data-delete-url') || '#';
-        var updatePosterUrl = trigger.getAttribute('data-updateposter-url') || '#';
-
-        movieModal.querySelector('.modal-title').textContent = title;
-
-        var posterImg = movieModal.querySelector('[data-role="poster"]');
-        var posterPlaceholder = movieModal.querySelector('[data-role="poster-placeholder"]');
-        if (poster) {
-            posterImg.src = poster;
-            posterImg.alt = title;
-            posterImg.classList.remove('d-none');
-            posterPlaceholder.classList.add('d-none');
-        } else {
-            posterImg.classList.add('d-none');
-            posterPlaceholder.classList.remove('d-none');
+        function renderStars(container, voto10) {
+            var voto = parseFloat(voto10);
+            if (isNaN(voto)) {
+                container.innerHTML = '';
+                return;
+            }
+            var stars = Math.max(0, Math.min(5, voto / 2));
+            var full = Math.floor(stars);
+            var half = (stars - full) >= 0.5 ? 1 : 0;
+            var empty = 5 - full - half;
+            var html = '';
+            for (var i = 0; i < full; i++) html += '<span class="star"></span>';
+            if (half) html += '<span class="star half"></span>';
+            for (var i = 0; i < empty; i++) html += '<span class="star empty"></span>';
+            container.innerHTML = html;
         }
 
-        movieModal.querySelector('[data-role="anno"]').textContent = anno || '-';
-        movieModal.querySelector('[data-role="genere"]').textContent = genere || '-';
-        movieModal.querySelector('[data-role="regista"]').textContent = regista || '-';
+        movieModal.addEventListener('show.bs.modal', function (event) {
+            var trigger = event.relatedTarget;
+            if (!trigger) return;
 
-        movieModal.querySelector('[data-role="visto"]').textContent =
-            (visto === 'True' || visto === 'true' || visto === '1') ? 'Si' : 'No';
+            var title   = trigger.getAttribute('data-title') || '';
+            var anno    = trigger.getAttribute('data-anno')  || '';
+            var genere  = trigger.getAttribute('data-genere') || '';
+            var regista = trigger.getAttribute('data-regista') || '';
+            var visto   = trigger.getAttribute('data-visto') || '';
+            var voto    = trigger.getAttribute('data-voto') || '';
+            var percorso = trigger.getAttribute('data-percorso') || '';
+            var poster   = trigger.getAttribute('data-poster') || '';
+            var dimensione = trigger.getAttribute('data-dimensione') || '';
+            var codifica   = trigger.getAttribute('data-codifica') || '';
+            var trama     = trigger.getAttribute('data-trama') || '';
 
-        var votoStarsEl = movieModal.querySelector('[data-role="voto-stars"]');
-        var votoNumEl = movieModal.querySelector('[data-role="voto-num"]');
-        if (votoStarsEl) renderStars(votoStarsEl, voto);
-        if (votoNumEl) votoNumEl.textContent = voto ? '(' + voto + '/10)' : '';
+            var playUrl        = trigger.getAttribute('data-play-url')   || '#';
+            var editUrl        = trigger.getAttribute('data-edit-url')   || '#';
+            var deleteUrl      = trigger.getAttribute('data-delete-url') || '#';
+            var updatePosterUrl = trigger.getAttribute('data-updateposter-url') || '#';
+            var detailUrl      = trigger.getAttribute('data-detail-url') || '#';
 
-        movieModal.querySelector('[data-role="trama"]').textContent = trama || '';
-        movieModal.querySelector('[data-role="percorso"]').textContent = percorso || '';
-        movieModal.querySelector('[data-role="dimensione"]').textContent = dimensione || '-';
-        movieModal.querySelector('[data-role="codifica"]').textContent = codifica || '-';
+            movieModal.querySelector('.modal-title').textContent = title;
 
-        movieModal.querySelector('[data-role="play-btn"]').href        = playUrl;
-        movieModal.querySelector('[data-role="edit-btn"]').href        = editUrl;
-        movieModal.querySelector('[data-role="delete-btn"]').href      = deleteUrl;
-        movieModal.querySelector('[data-role="updateposter-btn"]').href = updatePosterUrl;
+            var posterImg = movieModal.querySelector('[data-role="poster"]');
+            var posterPlaceholder = movieModal.querySelector('[data-role="poster-placeholder"]');
+            if (poster) {
+                posterImg.src = poster;
+                posterImg.alt = title;
+                posterImg.classList.remove('d-none');
+                posterPlaceholder.classList.add('d-none');
+            } else {
+                posterImg.classList.add('d-none');
+                posterPlaceholder.classList.remove('d-none');
+            }
+
+            movieModal.querySelector('[data-role="anno"]').textContent = anno || '-';
+            movieModal.querySelector('[data-role="genere"]').textContent = genere || '-';
+            movieModal.querySelector('[data-role="regista"]').textContent = regista || '-';
+
+            movieModal.querySelector('[data-role="visto"]').textContent =
+                (visto === 'True' || visto === 'true' || visto === '1') ? 'Si' : 'No';
+
+            var votoStarsEl = movieModal.querySelector('[data-role="voto-stars"]');
+            var votoNumEl = movieModal.querySelector('[data-role="voto-num"]');
+            if (votoStarsEl) renderStars(votoStarsEl, voto);
+            if (votoNumEl) votoNumEl.textContent = voto ? '(' + voto + '/10)' : '';
+
+            movieModal.querySelector('[data-role="trama"]').textContent = trama || '';
+            movieModal.querySelector('[data-role="percorso"]').textContent = percorso || '';
+            movieModal.querySelector('[data-role="dimensione"]').textContent = dimensione || '-';
+            movieModal.querySelector('[data-role="codifica"]').textContent = codifica || '-';
+
+            movieModal.querySelector('[data-role="play-btn"]').href        = playUrl;
+            movieModal.querySelector('[data-role="edit-btn"]').href        = editUrl;
+            movieModal.querySelector('[data-role="delete-btn"]').href      = deleteUrl;
+            movieModal.querySelector('[data-role="updateposter-btn"]').href = updatePosterUrl;
+            var detailBtn = movieModal.querySelector('[data-role="detail-btn"]');
+            if (detailBtn) {
+                detailBtn.href = detailUrl;
+            }
+
+            var detailBtn = movieModal.querySelector('[data-role="detail-btn"]');
+                if (detailBtn) {
+                    detailBtn.onclick = function (e) {
+                        e.preventDefault();
+                        var url = trigger.getAttribute("data-detail-url");
+                        if (url && url !== "#") window.location.href = url;
+                    };
+                }
 
     });
 

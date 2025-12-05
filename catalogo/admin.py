@@ -8,7 +8,16 @@ from .models import Movie
 
 @admin.register(Movie)
 class MovieAdmin(admin.ModelAdmin):
-    list_display = ("titolo", "anno", "genere", "regista", "visto", "voto")
+    list_display = (
+        "titolo",
+        "anno",
+        "genere",
+        "regista",
+        "visto",
+        "voto",
+        "recensione",
+        "ultima_visione",
+    )
     list_filter = (
         "genere",
         "regista",
