@@ -1,12 +1,9 @@
 ﻿{% extends "catalogo/base.html" %}
 
 {% block title %}Catalogo{% endblock %}
-{% block nav_home_active %} active{% endblock %}
+
     
 {% block content %}
-
-
-
 
         <!-- MODAL FILTRI AVANZATI -->
     <div class="modal fade" id="filterModal" tabindex="-1" aria-hidden="true">
@@ -234,135 +231,11 @@
         </div>
         {% endif %}
 
-        <div class="row mb-4">
-            <div class="col">
-            {% if random_movie %}
-                <div class="random-banner mb-4 position-relative rounded overflow-hidden">
-                    
-                    <!-- FRECCIA SINISTRA -->
-                    <button onclick="window.location.reload()"
-                            class="banner-arrow banner-arrow-left">
-                        &#10094;
-                    </button>
 
-                    <!-- FRECCIA DESTRA -->
-                    <button onclick="window.location.reload()"
-                            class="banner-arrow banner-arrow-right">
-                        &#10095;
-                    </button>
-
-                    <!-- SFONDO -->
-                    <div class="position-absolute top-0 start-0 w-100 h-100"
-                        style="
-                            background-image: url('{{ random_movie.locandina_url }}');
-                            background-size: cover;
-                            background-position: center;
-                            filter: blur(8px);
-                            transform: scale(1.1);
-                            opacity: 0.85;
-                        ">
-                    </div>
-
-                    <!-- OVERLAY LEGGERISSIMO -->
-                    <div class="position-absolute top-0 start-0 w-100 h-100"
-                        style="
-                            background: linear-gradient(
-                                rgba(0,0,0,0.25),
-                                rgba(0,0,0,0.45)
-                                );
-                        ">
-                    </div>
-
-
-
-                    <!-- CONTENUTO -->
-                    <div class="position-relative text-center text-light px-3 py-5"
-                        style="z-index: 5;">
-
-                        <!-- TITOLO -->
-                        <h1 class="fw-bold display-5 mb-3">
-                            {{ random_movie.titolo }}
-                        </h1>
-
-                        <!-- BADGE -->
-                        <div class="mb-3">
-                            {% if random_movie.anno %}
-                                <span class="badge bg-light text-dark me-1">
-                                    {{ random_movie.anno }}
-                                </span>
-                            {% endif %}
-
-                            {% if random_movie.genere %}
-                                <span class="badge bg-secondary me-1">
-                                    {{ random_movie.genere }}
-                                </span>
-                            {% endif %}
-
-                            {% if random_movie.voto %}
-                                <span class="badge bg-warning text-dark">
-                                    â˜… {{ random_movie.voto }}/10
-                                </span>
-                            {% endif %}
-                        </div>
-
-                        <!-- TRAMA -->
-                        {% if random_movie.trama %}
-                        <p class="lead fw-normal mb-4 d-none d-md-block"
-                        style="max-width: 720px; margin: 0 auto;">
-                            {{ random_movie.trama|truncatechars:160 }}
-                        </p>
-                        {% endif %}
-
-                        <!-- BOTTONI -->
-                        <div class="d-flex justify-content-center gap-3 mt-3">
-                            <!-- PLAY -->
-                            <a href="{% url 'movie_play' random_movie.pk %}?next={{ request.get_full_path|urlencode }}"
-                            class="amb-btn amb-btn-play">
-                                <span class="amb-btn-icon-play"></span>
-                                <span>Riproduci</span>
-                            </a>
-
-                            <!-- ALTRE INFO -->
-                            <!-- ALTRE INFO -->
-                            <button type="button"
-                                    class="amb-btn amb-btn-info"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#movieModal"
-
-                                    data-movie-id="{{ random_movie.pk }}"
-                                    data-title="{{ random_movie.titolo }}"
-                                    data-anno="{{ random_movie.anno }}"
-                                    data-genere="{{ random_movie.genere }}"
-                                    data-regista="{{ random_movie.regista }}"
-                                    data-visto="{{ random_movie.visto }}"
-                                    data-voto="{{ random_movie.voto }}"
-                                    data-percorso="{{ random_movie.percorso }}"
-                                    data-poster="{{ random_movie.locandina_url }}"
-                                    data-dimensione="{{ random_movie.dimensione_file_mb }}"
-                                    data-codifica="{{ random_movie.codifica }}"
-                                    data-trama="{{ random_movie.trama|default_if_none:'' }}"
-
-                                    data-updateposter-url="{% url 'update_movie_poster' random_movie.pk %}"
-                                    data-play-url="{% url 'movie_play' random_movie.pk %}"
-                                    data-detail-url="{% url 'movie_detail' random_movie.pk %}"
-                                    data-edit-url="{% url 'movie_edit' random_movie.pk %}"
-                                    data-delete-url="{% url 'movie_delete' random_movie.pk %}"
-                            >
-                                <span class="amb-btn-icon-info">i</span>
-                                <span>Altre info</span>
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </div>
-                {% endif %}
-
-
-            </div>
-        </div>
-
+        <!-- BANNER -->
+        {% if random_movie %}
+           {% include "catalogo/_banner_random.html" with movie=random_movie %}
+        {% endif %}
 
             <!-- Tabella -->
             <div class="row g-2 gx-2 gy-3 px-1 px-lg-2">
@@ -642,142 +515,168 @@
 
 
 {% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
 
-        // 1) Inizializza TUTTI i tooltip della pagina
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (el) {
-            return new bootstrap.Tooltip(el);
-        });
+            // 1) Inizializza TUTTI i tooltip della pagina
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (el) {
+                return new bootstrap.Tooltip(el);
+            });
 
-        // 2) Tutto il resto (modale, ecc.)
-        var movieModal = document.getElementById('movieModal');
-        if (!movieModal) return;
+            // 2) Tutto il resto (modale, ecc.)
+            var movieModal = document.getElementById('movieModal');
+            if (!movieModal) return;
 
-        function renderStars(container, voto10) {
-            var voto = parseFloat(voto10);
-            if (isNaN(voto)) {
-                container.innerHTML = '';
-                return;
-            }
-            var stars = Math.max(0, Math.min(5, voto / 2));
-            var full = Math.floor(stars);
-            var half = (stars - full) >= 0.5 ? 1 : 0;
-            var empty = 5 - full - half;
-            var html = '';
-            for (var i = 0; i < full; i++) html += '<span class="star"></span>';
-            if (half) html += '<span class="star half"></span>';
-            for (var i = 0; i < empty; i++) html += '<span class="star empty"></span>';
-            container.innerHTML = html;
-        }
-
-        movieModal.addEventListener('show.bs.modal', function (event) {
-            var trigger = event.relatedTarget;
-            if (!trigger) return;
-
-            var title   = trigger.getAttribute('data-title') || '';
-            var anno    = trigger.getAttribute('data-anno')  || '';
-            var genere  = trigger.getAttribute('data-genere') || '';
-            var regista = trigger.getAttribute('data-regista') || '';
-            var visto   = trigger.getAttribute('data-visto') || '';
-            var voto    = trigger.getAttribute('data-voto') || '';
-            var percorso = trigger.getAttribute('data-percorso') || '';
-            var poster   = trigger.getAttribute('data-poster') || '';
-            var dimensione = trigger.getAttribute('data-dimensione') || '';
-            var codifica   = trigger.getAttribute('data-codifica') || '';
-            var trama     = trigger.getAttribute('data-trama') || '';
-
-            var playUrl        = trigger.getAttribute('data-play-url')   || '#';
-            var editUrl        = trigger.getAttribute('data-edit-url')   || '#';
-            var deleteUrl      = trigger.getAttribute('data-delete-url') || '#';
-            var updatePosterUrl = trigger.getAttribute('data-updateposter-url') || '#';
-            var detailUrl      = trigger.getAttribute('data-detail-url') || '#';
-
-            movieModal.querySelector('.modal-title').textContent = title;
-
-            var posterImg = movieModal.querySelector('[data-role="poster"]');
-            var posterPlaceholder = movieModal.querySelector('[data-role="poster-placeholder"]');
-            if (poster) {
-                posterImg.src = poster;
-                posterImg.alt = title;
-                posterImg.classList.remove('d-none');
-                posterPlaceholder.classList.add('d-none');
-            } else {
-                posterImg.classList.add('d-none');
-                posterPlaceholder.classList.remove('d-none');
+            function renderStars(container, voto10) {
+                var voto = parseFloat(voto10);
+                if (isNaN(voto)) {
+                    container.innerHTML = '';
+                    return;
+                }
+                var stars = Math.max(0, Math.min(5, voto / 2));
+                var full = Math.floor(stars);
+                var half = (stars - full) >= 0.5 ? 1 : 0;
+                var empty = 5 - full - half;
+                var html = '';
+                for (var i = 0; i < full; i++) html += '<span class="star"></span>';
+                if (half) html += '<span class="star half"></span>';
+                for (var i = 0; i < empty; i++) html += '<span class="star empty"></span>';
+                container.innerHTML = html;
             }
 
-            movieModal.querySelector('[data-role="anno"]').textContent = anno || '-';
-            movieModal.querySelector('[data-role="genere"]').textContent = genere || '-';
-            movieModal.querySelector('[data-role="regista"]').textContent = regista || '-';
+            movieModal.addEventListener('show.bs.modal', function (event) {
+                var trigger = event.relatedTarget;
+                if (!trigger) return;
 
-            movieModal.querySelector('[data-role="visto"]').textContent =
-                (visto === 'True' || visto === 'true' || visto === '1') ? 'Si' : 'No';
+                var title   = trigger.getAttribute('data-title') || '';
+                var anno    = trigger.getAttribute('data-anno')  || '';
+                var genere  = trigger.getAttribute('data-genere') || '';
+                var regista = trigger.getAttribute('data-regista') || '';
+                var visto   = trigger.getAttribute('data-visto') || '';
+                var voto    = trigger.getAttribute('data-voto') || '';
+                var percorso = trigger.getAttribute('data-percorso') || '';
+                var poster   = trigger.getAttribute('data-poster') || '';
+                var dimensione = trigger.getAttribute('data-dimensione') || '';
+                var codifica   = trigger.getAttribute('data-codifica') || '';
+                var trama     = trigger.getAttribute('data-trama') || '';
 
-            var votoStarsEl = movieModal.querySelector('[data-role="voto-stars"]');
-            var votoNumEl = movieModal.querySelector('[data-role="voto-num"]');
-            if (votoStarsEl) renderStars(votoStarsEl, voto);
-            if (votoNumEl) votoNumEl.textContent = voto ? '(' + voto + '/10)' : '';
+                var playUrl        = trigger.getAttribute('data-play-url')   || '#';
+                var editUrl        = trigger.getAttribute('data-edit-url')   || '#';
+                var deleteUrl      = trigger.getAttribute('data-delete-url') || '#';
+                var updatePosterUrl = trigger.getAttribute('data-updateposter-url') || '#';
+                var detailUrl      = trigger.getAttribute('data-detail-url') || '#';
 
-            movieModal.querySelector('[data-role="trama"]').textContent = trama || '';
-            movieModal.querySelector('[data-role="percorso"]').textContent = percorso || '';
-            movieModal.querySelector('[data-role="dimensione"]').textContent = dimensione || '-';
-            movieModal.querySelector('[data-role="codifica"]').textContent = codifica || '-';
+                movieModal.querySelector('.modal-title').textContent = title;
 
-            movieModal.querySelector('[data-role="play-btn"]').href        = playUrl;
-            movieModal.querySelector('[data-role="edit-btn"]').href        = editUrl;
-            movieModal.querySelector('[data-role="delete-btn"]').href      = deleteUrl;
-            movieModal.querySelector('[data-role="updateposter-btn"]').href = updatePosterUrl;
-            var detailBtn = movieModal.querySelector('[data-role="detail-btn"]');
-            if (detailBtn) {
-                detailBtn.href = detailUrl;
-            }
-
-            var detailBtn = movieModal.querySelector('[data-role="detail-btn"]');
-                if (detailBtn) {
-                    detailBtn.onclick = function (e) {
-                        e.preventDefault();
-                        var url = trigger.getAttribute("data-detail-url");
-                        if (url && url !== "#") window.location.href = url;
-                    };
+                var posterImg = movieModal.querySelector('[data-role="poster"]');
+                var posterPlaceholder = movieModal.querySelector('[data-role="poster-placeholder"]');
+                if (poster) {
+                    posterImg.src = poster;
+                    posterImg.alt = title;
+                    posterImg.classList.remove('d-none');
+                    posterPlaceholder.classList.add('d-none');
+                } else {
+                    posterImg.classList.add('d-none');
+                    posterPlaceholder.classList.remove('d-none');
                 }
 
-    });
+                movieModal.querySelector('[data-role="anno"]').textContent = anno || '-';
+                movieModal.querySelector('[data-role="genere"]').textContent = genere || '-';
+                movieModal.querySelector('[data-role="regista"]').textContent = regista || '-';
 
-    // Click su “Modifica”: salva scroll e vai alla pagina
-    var editBtn = movieModal.querySelector('[data-role="edit-btn"]');
-    if (editBtn) {
-        editBtn.addEventListener('click', function (e) {
-            e.preventDefault();
-            var href = editBtn.getAttribute('href');
-            if (!href) return;
-            sessionStorage.setItem('movie_list_scroll', Math.round(window.scrollY).toString());
-            var current = new URL(window.location.href);
-            var nextValue = current.pathname + (current.search ? current.search : '');
-            var target = new URL(href, window.location.origin);
-            target.searchParams.set('next', nextValue);
-            window.location.href = target.toString();
+                movieModal.querySelector('[data-role="visto"]').textContent =
+                    (visto === 'True' || visto === 'true' || visto === '1') ? 'Si' : 'No';
+
+                var votoStarsEl = movieModal.querySelector('[data-role="voto-stars"]');
+                var votoNumEl = movieModal.querySelector('[data-role="voto-num"]');
+                if (votoStarsEl) renderStars(votoStarsEl, voto);
+                if (votoNumEl) votoNumEl.textContent = voto ? '(' + voto + '/10)' : '';
+
+                movieModal.querySelector('[data-role="trama"]').textContent = trama || '';
+                movieModal.querySelector('[data-role="percorso"]').textContent = percorso || '';
+                movieModal.querySelector('[data-role="dimensione"]').textContent = dimensione || '-';
+                movieModal.querySelector('[data-role="codifica"]').textContent = codifica || '-';
+
+                movieModal.querySelector('[data-role="play-btn"]').href        = playUrl;
+                movieModal.querySelector('[data-role="edit-btn"]').href        = editUrl;
+                movieModal.querySelector('[data-role="delete-btn"]').href      = deleteUrl;
+                movieModal.querySelector('[data-role="updateposter-btn"]').href = updatePosterUrl;
+                var detailBtn = movieModal.querySelector('[data-role="detail-btn"]');
+                if (detailBtn) {
+                    detailBtn.href = detailUrl;
+                }
+
+                var detailBtn = movieModal.querySelector('[data-role="detail-btn"]');
+                    if (detailBtn) {
+                        detailBtn.onclick = function (e) {
+                            e.preventDefault();
+                            var url = trigger.getAttribute("data-detail-url");
+                            if (url && url !== "#") window.location.href = url;
+                        };
+                    }
+
         });
-    }
 
-    // ?open=ID apre la modale automaticamente
-    const params = new URLSearchParams(window.location.search);
-    const openId = params.get('open');
-    if (openId) {
-        const trigger = document.querySelector('[data-movie-id="' + openId + '"]');
-        if (trigger) trigger.click();
-    }
+        // Click su “Modifica”: salva scroll e vai alla pagina
+        var editBtn = movieModal.querySelector('[data-role="edit-btn"]');
+        if (editBtn) {
+            editBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                var href = editBtn.getAttribute('href');
+                if (!href) return;
+                sessionStorage.setItem('movie_list_scroll', Math.round(window.scrollY).toString());
+                var current = new URL(window.location.href);
+                var nextValue = current.pathname + (current.search ? current.search : '');
+                var target = new URL(href, window.location.origin);
+                target.searchParams.set('next', nextValue);
+                window.location.href = target.toString();
+            });
+        }
 
-    // Ripristina scroll da sessionStorage
-    const savedScroll = sessionStorage.getItem('movie_list_scroll');
-    if (savedScroll !== null) {
-        const pos = parseInt(savedScroll, 10);
-        if (!isNaN(pos)) window.scrollTo(0, pos);
-        sessionStorage.removeItem('movie_list_scroll');
-    }
-});
-</script>
+        // ?open=ID apre la modale automaticamente
+        const params = new URLSearchParams(window.location.search);
+        const openId = params.get('open');
+        if (openId) {
+            const trigger = document.querySelector('[data-movie-id="' + openId + '"]');
+            if (trigger) trigger.click();
+        }
+
+        // Ripristina scroll da sessionStorage
+        const savedScroll = sessionStorage.getItem('movie_list_scroll');
+        if (savedScroll !== null) {
+            const pos = parseInt(savedScroll, 10);
+            if (!isNaN(pos)) window.scrollTo(0, pos);
+            sessionStorage.removeItem('movie_list_scroll');
+        }
+    });
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const banner = document.querySelector('.random-banner');
+        if (!banner) return;
+
+        // FRECCE: ogni click ricarica la pagina -> la view sceglie un nuovo random_movie
+        banner.querySelectorAll('.amb-banner-arrow').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                // semplice reload: la view sceglie un altro film casuale
+                window.location.reload();
+            });
+        });
+
+        // PLAY: lasciamo che il browser segua l'href (non deve toccare il banner)
+        const playBtn = banner.querySelector('.amb-btn-play');
+        if (playBtn) {
+            playBtn.addEventListener('click', function (e) {
+                // nessun preventDefault: così va al player
+            });
+        }
+    });
+    </script>
+
+
 {% endblock %}
 
 

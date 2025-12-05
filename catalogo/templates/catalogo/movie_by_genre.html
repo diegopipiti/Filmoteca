@@ -1,0 +1,286 @@
+{% extends "catalogo/base.html" %}
+
+{% block title %}Ambassador – Home{% endblock %}
+
+{% block nav_home_active %} active{% endblock %}
+
+{% block content %}
+
+<style>
+    /* Contenitore principale più largo, stile Netflix */
+    .amb-main-container {
+        padding-top: 1.5rem;
+        padding-bottom: 2.5rem;
+    }
+
+    /* Titolo sezione (nome del genere) */
+    .amb-genre-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.35rem;
+    }
+
+    .amb-genre-subtitle {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.6);
+        margin-bottom: 0.5rem;
+    }
+
+    /* Riga orizzontale scorrevole */
+    .amb-genre-row {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 0.6rem;
+        padding-bottom: 0.8rem;
+        margin-bottom: 1rem;
+        scroll-behavior: smooth;
+    }
+
+    .amb-genre-row::-webkit-scrollbar {
+        height: 6px;
+    }
+    .amb-genre-row::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .amb-genre-row::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 999px;
+    }
+
+    /* Card locandina stile "rail" */
+    .amb-rail-card {
+        background: transparent;
+        border: none;
+        min-width: 170px;
+        max-width: 190px;
+        position: relative;
+        cursor: pointer;
+    }
+
+    @media (min-width: 1400px) {
+        .amb-rail-card {
+            min-width: 190px;
+            max-width: 210px;
+        }
+    }
+
+    .amb-rail-poster-wrapper {
+        position: relative;
+        width: 100%;
+        padding-top: 150%; /* 2:3 */
+        overflow: hidden;
+        border-radius: 0.35rem;
+        background-color: #444;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+        transition:
+            transform 0.18s ease,
+            box-shadow 0.18s ease,
+            filter 0.18s ease;
+    }
+
+    .amb-rail-poster-wrapper img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .amb-rail-card:hover .amb-rail-poster-wrapper {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.75);
+        filter: brightness(1.05);
+    }
+
+    .amb-rail-title {
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .amb-rail-title span {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+        /* Contenitore slider per ogni genere */
+    .amb-genre-slider {
+        position: relative;
+    }
+
+    /* Riga di poster: niente scrollbar visibile */
+    .amb-genre-row {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: hidden;              /* <--- niente barra */
+        gap: 0.6rem;
+        padding: 0.4rem 0 0.8rem 0;
+        scroll-behavior: smooth;
+    }
+
+    /* FRECCE LATERALI */
+    .amb-genre-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px;
+        height: 80px;
+        border: none;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.55);
+        color: #ffffff;
+        font-size: 2rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        opacity: 0;                      /* nascoste di base */
+        transition: opacity 0.2s ease;
+        z-index: 10;
+    }
+
+    /* Mostra le frecce solo quando il mouse è sopra lo slider */
+    .amb-genre-slider:hover .amb-genre-arrow {
+        opacity: 1;
+    }
+
+    .amb-genre-arrow-left {
+        left: 0.4rem;
+    }
+
+    .amb-genre-arrow-right {
+        right: 0.4rem;
+    }
+
+        /* Stile categoria speciale */
+    .special-category-title {
+        color: #f2c94c;        /* Oro */
+        font-weight: 700;
+        font-size: 1.3rem;
+        letter-spacing: 0.5px;
+    }
+
+</style>
+
+<div class="container-fluid amb-main-container">
+
+    <!-- BANNER -->
+    {% if random_movie %}
+        {% include "catalogo/_banner_random.html" with movie=random_movie %}
+    {% endif %}
+
+    <!-- SEZIONI PER GENERE -->
+    {% for section in sections %}
+        <section class="mb-3">
+            <h2 class="amb-genre-title text-light {% if section.special %}special-category-title{% endif %}">
+                {{ section.titolo }}
+            </h2>
+            <div class="amb-genre-subtitle">
+                {{ section.movies|length }} titoli
+            </div>
+            <div class="amb-genre-slider position-relative">
+
+                <!-- FRECCIA SINISTRA -->
+                <button
+                    class="amb-genre-arrow amb-genre-arrow-left"
+                    type="button"
+                    data-target="rail-{{ forloop.counter }}"
+                >
+                    ‹
+                </button>
+
+                <!-- RIGA SCORRIBILE -->
+                <div class="amb-genre-row" id="rail-{{ forloop.counter }}">
+                    {% for m in section.movies %}
+                        <a href="{% url 'movie_detail' m.pk %}"
+                        class="text-decoration-none amb-rail-card">
+                            <div class="amb-rail-poster-wrapper">
+                                {% if m.locandina_url %}
+                                    <img src="{{ m.locandina_url }}"
+                                        alt="{{ m.titolo }}">
+                                {% else %}
+                                    <div class="d-flex align-items-center justify-content-center w-100 h-100">
+                                        <span class="small text-center px-2 text-light">
+                                            {{ m.titolo }}
+                                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <!-- FRECCIA DESTRA -->
+                <button
+                    class="amb-genre-arrow amb-genre-arrow-right"
+                    type="button"
+                    data-target="rail-{{ forloop.counter }}"
+                >
+                    ›
+                </button>
+
+            </div>
+
+        </section>
+    {% empty %}
+        <p class="text-center text-secondary mt-5">
+            Nessun film presente. Aggiungine uno dall'admin.
+        </p>
+    {% endfor %}
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Frecce slider per generi
+        document.querySelectorAll('.amb-genre-arrow').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const railId = btn.getAttribute('data-target');
+                const rail = document.getElementById(railId);
+                if (!rail) return;
+
+                // quanto far scorrere (puoi aumentare/diminuire)
+                const scrollAmount = 600;
+
+                if (btn.classList.contains('amb-genre-arrow-left')) {
+                    rail.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+                } else {
+                    rail.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                }
+            });
+        });
+    });
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const banner = document.querySelector('.random-banner');
+        if (!banner) return;
+
+        // FRECCE: ogni click ricarica la pagina -> la view sceglie un nuovo random_movie
+        banner.querySelectorAll('.amb-banner-arrow').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                // semplice reload: la view sceglie un altro film casuale
+                window.location.reload();
+            });
+        });
+
+        // PLAY: lasciamo che il browser segua l'href (non deve toccare il banner)
+        const playBtn = banner.querySelector('.amb-btn-play');
+        if (playBtn) {
+            playBtn.addEventListener('click', function (e) {
+                // nessun preventDefault: così va al player
+            });
+        }
+    });
+    </script>
+
+{% endblock %}

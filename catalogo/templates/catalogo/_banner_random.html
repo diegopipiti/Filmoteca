@@ -1,0 +1,119 @@
+{# catalogo/_banner_random.html #}
+{% if movie %}
+<div class="random-banner mb-4 position-relative rounded overflow-hidden">
+
+    <!-- SFONDO -->
+    <div class="position-absolute top-0 start-0 w-100 h-100"
+         style="
+             background-image: url('{{ movie.locandina_url }}');
+             background-size: cover;
+             background-position: center;
+             filter: blur(8px);
+             transform: scale(1.1);
+             opacity: 0.85;
+         ">
+    </div>
+
+    <!-- OVERLAY LEGGERO -->
+    <div class="position-absolute top-0 start-0 w-100 h-100"
+         style="
+             background: linear-gradient(
+                 rgba(0,0,0,0.25),
+                 rgba(0,0,0,0.45)
+             );
+         ">
+    </div>
+
+    <!-- CONTENUTO -->
+    <div class="position-relative text-center text-light px-3 py-5"
+         style="z-index: 5;">
+
+        <!-- TITOLO -->
+        <h1 class="fw-bold display-5 mb-3">
+            {{ movie.titolo }}
+        </h1>
+
+        <!-- BADGE + STELLINE -->
+        <div class="mb-3 d-flex justify-content-center align-items-center gap-2 flex-wrap">
+            {% if movie.anno %}
+                <span class="badge bg-light text-dark">
+                    {{ movie.anno }}
+                </span>
+            {% endif %}
+
+            {% if movie.genere %}
+                <span class="badge bg-secondary">
+                    {{ movie.genere }}
+                </span>
+            {% endif %}
+
+            {% if movie.voto %}
+                <span class="d-inline-flex align-items-center">
+                    <span class="amb-stars" data-voto="{{ movie.voto }}"></span>
+                    <span class="small ms-1 text-muted">({{ movie.voto }}/10)</span>
+                </span>
+            {% endif %}
+        </div>
+
+        <!-- TRAMA -->
+        {% if movie.trama %}
+            <p class="lead fw-normal mb-4 d-none d-md-block"
+               style="max-width: 720px; margin: 0 auto;">
+                {{ movie.trama|truncatechars:160 }}
+            </p>
+        {% endif %}
+
+        {# BOTTONI BANNER #}
+        <div class="d-flex justify-content-center gap-3 mt-3">
+
+            {# PLAY: va direttamente alla view movie_play #}
+            <a href="{% url 'movie_play' movie.pk %}?next={{ request.get_full_path|urlencode }}"
+            class="amb-btn amb-btn-play"
+            data-play-url="{% url 'movie_play' movie.pk %}?next={{ request.get_full_path|urlencode }}">
+                <span class="amb-btn-icon-play"></span>
+                <span>Riproduci</span>
+            </a>
+
+            {# INFO: ha tutti i data-* esattamente come le card della vetrina #}
+            <button type="button"
+                    class="amb-btn amb-btn-info"
+                    data-bs-toggle="modal"
+                    data-bs-target="#movieModal"
+
+                    data-title="{{ movie.titolo }}"
+                    data-movie-id="{{ movie.pk }}"
+                    data-anno="{{ movie.anno }}"
+                    data-genere="{{ movie.genere }}"
+                    data-regista="{{ movie.regista }}"
+                    data-visto="{{ movie.visto }}"
+                    data-voto="{{ movie.voto }}"
+                    data-percorso="{{ movie.percorso }}"
+                    data-poster="{{ movie.locandina_url }}"
+                    data-dimensione="{{ movie.dimensione_file_mb }}"
+                    data-codifica="{{ movie.codifica }}"
+                    data-trama="{{ movie.trama|default_if_none:'' }}"
+                    data-updateposter-url="{% url 'update_movie_poster' movie.pk %}"
+                    data-play-url="{% url 'movie_play' movie.pk %}?next={{ request.get_full_path|urlencode }}"
+                    data-detail-url="{% url 'movie_detail' movie.pk %}"
+                    data-edit-url="{% url 'movie_edit' movie.pk %}"
+                    data-delete-url="{% url 'movie_delete' movie.pk %}">
+                <span class="amb-btn-icon-info">i</span>
+                <span>Altre info</span>
+            </button>
+        </div>
+
+        {# FRECCE (solo cambio film casuale) #}
+        <button type="button"
+                class="amb-banner-arrow amb-banner-arrow-left">
+            ‹
+        </button>
+
+        <button type="button"
+                class="amb-banner-arrow amb-banner-arrow-right">
+            ›
+        </button>
+
+
+    </div>
+</div>
+{% endif %}

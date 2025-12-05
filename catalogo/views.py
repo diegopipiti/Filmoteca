@@ -8,6 +8,7 @@ from django.db.models import Q
 import random
 from typing import Optional, Tuple
 import sys
+from collections import defaultdict
 
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
@@ -19,6 +20,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from typing import Optional
 from .models import Movie
+
 
 VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".mpg", ".mpeg"]
 
@@ -358,6 +360,7 @@ def movie_list(request):
         request,
         "catalogo/movie_list.html",
         {
+            "active_page": "all_movies",
             "movies": page_obj,
             "filtri": filtri,
             "page_obj": page_obj,
@@ -794,3 +797,122 @@ def guess_title_and_year(filename: str) -> Tuple[str, Optional[int]]:
         titolo = titolo.title()
 
     return titolo, anno
+
+    """
+    Home stile Netflix: righe orizzontali di locandine raggruppate per genere.
+    Prendiamo come 'genere principale' la prima voce prima della virgola.
+    """
+    movies = Movie.objects.all().order_by(
+        "-id"
+    )  # o per data di aggiunta se hai un campo dedicato
+
+    gruppi = defaultdict(list)
+
+    for m in movies:
+        raw_genere = (m.genere or "").strip()
+        if not raw_genere:
+            main_genre = "Senza genere"
+        else:
+            main_genre = raw_genere.split(",")[0].strip()
+        gruppi[main_genre].append(m)
+
+    # Optional: limitiamo il numero di film per riga (es. 24)
+    MAX_PER_GENRE = 24
+    sezioni = []
+    for genere, lista in sorted(
+        gruppi.items(), key=lambda x: x[0]
+    ):  # ordinati alfabeticamente
+        sezioni.append(
+            {
+                "titolo": genere,
+                "movies": lista[:MAX_PER_GENRE],
+            }
+        )
+
+    return render(
+        request,
+        "catalogo/movie_by_genre.html",
+        {
+            "sections": sezioni,
+        },
+    )
+
+
+def movie_by_genre(request):
+    movies = Movie.objects.all().order_by("-id")
+
+    gruppi = defaultdict(list)
+
+    # --- 1. SEZIONE SPECIALE: film con voto >= 8 (4 stelle) ---
+    top_rated = Movie.objects.filter(voto__gte=8).order_by("-voto", "-id")
+    # Limitiamoli a 24 o al numero che preferisci
+    TOP_LIMIT = 24
+    top_rated = top_rated[:TOP_LIMIT]
+
+    # --- 2. RAGGRUPPAMENTO PER GENERE ---
+    for m in movies:
+        raw_genere = (m.genere or "").strip()
+        if not raw_genere:
+            main_genre = "Senza genere"
+        else:
+            main_genre = raw_genere.split(",")[0].strip()
+        gruppi[main_genre].append(m)
+
+    MAX_PER_GENRE = 24
+
+    sezioni = []
+
+    # Aggiungi PRIMA la categoria speciale ⭐⭐⭐⭐
+    if top_rated:
+        sezioni.append(
+            {
+                "titolo": "⭐⭐⭐⭐ Film 4 stelle e oltre",
+                "movies": top_rated,
+                "special": True,  # per eventuali stili diversi in futuro
+            }
+        )
+
+    # CONTINUA A GUARDARE (in base a data_ultima_visione)
+    continua_qs = Movie.objects.filter(ultima_visione__isnull=False).order_by(
+        "-ultima_visione"
+    )[
+        :12
+    ]  # prendi gli ultimi visti
+
+    if continua_qs.exists():
+        sezioni.append(
+            {
+                "titolo": "Continua a guardare",
+                "slug": "continua-a-guardare",
+                "special": True,
+                "movies": continua_qs,
+            }
+        )
+
+    # Aggiungi tutte le altre categorie normali
+    for genere, lista in sorted(gruppi.items(), key=lambda x: x[0]):
+        sezioni.append(
+            {
+                "titolo": genere,
+                "movies": lista[:MAX_PER_GENRE],
+                "special": False,
+            }
+        )
+
+    # 🔥 Film random con locandina per l'header
+    all_with_poster = Movie.objects.exclude(locandina_url__isnull=True).exclude(
+        locandina_url__exact=""
+    )
+    random_movie = (
+        random.choice(list(all_with_poster)) if all_with_poster.exists() else None
+    )
+
+    return render(
+        request,
+        "catalogo/movie_by_genre.html",
+        {
+            "active_page": "home",
+            "sections": sezioni,
+            "random_movie": random_movie,
+        },
+    )
