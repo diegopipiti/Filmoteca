@@ -175,89 +175,6 @@ def fetch_movie_data_from_tmdb(
     return result
 
 
-def guess_title_and_year(filename: str):
-    """
-    Prova a ricavare titolo e anno dal nome file (senza percorso).
-
-    Regola principale:
-    - se trova un anno (19xx o 20xx), considera solo la parte PRIMA dell'anno come titolo.
-    - poi ripulisce il titolo togliendo tag tecnici (1080p, BluRay, x264, ITALIAN, ecc.).
-    """
-    # togliamo l'estensione
-    base, _ = os.path.splitext(filename)
-
-    # prova a trovare un anno 19xx o 20xx
-    match = re.search(r"(19[0-9]{2}|20[0-9]{2})", base)
-    year = None
-    if match:
-        year = int(match.group(0))
-        # prendi solo la parte PRIMA dell'anno come titolo grezzo
-        raw_title = base[: match.start()]
-    else:
-        # se non c'è anno, usa tutto il nome (senza estensione)
-        raw_title = base
-
-    # sostituisci caratteri di "separazione" con spazi
-    working = re.sub(r"[\.\_\-\[\]\(\)]", " ", raw_title)
-
-    # lista di parole "spazzatura" da togliere se presenti nel titolo
-    junk_words = [
-        "1080p",
-        "720p",
-        "2160p",
-        "4k",
-        "uhd",
-        "bluray",
-        "bdrip",
-        "brrip",
-        "hdrip",
-        "dvdrip",
-        "dvd",
-        "webrip",
-        "webdl",
-        "web-dl",
-        "hdtv",
-        "x264",
-        "x265",
-        "h264",
-        "h265",
-        "hevc",
-        "ac3",
-        "dts",
-        "truehd",
-        "atmos",
-        "italian",
-        "ita",
-        "eng",
-        "english",
-        "multi",
-        "sub",
-        "subbed",
-        "dubbed",
-        "limited",
-        "proper",
-        "internal",
-        "repack",
-        "remux",
-        "hdr",
-        "10bit",
-        "8bit",
-    ]
-
-    # crea una regex che trova queste parole come "parole intere" (case-insensitive)
-    pattern = r"\b(" + "|".join(junk_words) + r")\b"
-    working = re.sub(pattern, " ", working, flags=re.IGNORECASE)
-
-    # comprimi spazi multipli
-    title = re.sub(r"\s+", " ", working).strip()
-
-    # se per qualche motivo rimane vuoto, usa il base originale
-    if not title:
-        title = base
-
-    return title, year
-
-
 def movie_list(request):
     qs = Movie.objects.all().order_by("titolo")
 
@@ -797,14 +714,6 @@ def guess_title_and_year(filename: str) -> Tuple[str, Optional[int]]:
         titolo = titolo.title()
 
     return titolo, anno
-
-    """
-    Home stile Netflix: righe orizzontali di locandine raggruppate per genere.
-    Prendiamo come 'genere principale' la prima voce prima della virgola.
-    """
-    movies = Movie.objects.all().order_by(
-        "-id"
-    )  # o per data di aggiunta se hai un campo dedicato
 
     gruppi = defaultdict(list)
 
