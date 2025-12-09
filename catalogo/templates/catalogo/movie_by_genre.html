@@ -259,28 +259,4 @@
     });
     </script>
 
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const banner = document.querySelector('.random-banner');
-        if (!banner) return;
-
-        // FRECCE: ogni click ricarica la pagina -> la view sceglie un nuovo random_movie
-        banner.querySelectorAll('.amb-banner-arrow').forEach(function (btn) {
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                // semplice reload: la view sceglie un altro film casuale
-                window.location.reload();
-            });
-        });
-
-        // PLAY: lasciamo che il browser segua l'href (non deve toccare il banner)
-        const playBtn = banner.querySelector('.amb-btn-play');
-        if (playBtn) {
-            playBtn.addEventListener('click', function (e) {
-                // nessun preventDefault: così va al player
-            });
-        }
-    });
-    </script>
-
 {% endblock %}
