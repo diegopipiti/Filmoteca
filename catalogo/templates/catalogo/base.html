@@ -319,6 +319,7 @@
             padding-left: 0 !important;
             padding-right: 0 !important;
         }
+        
         /* FRECCE DEL BANNER — invisibili finché non si fa hover */
         .random-banner {
             position: relative;
@@ -700,43 +701,42 @@
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
+            z-index: 10;
+            background: rgba(0,0,0,0.45);
             border: none;
-            background: rgba(0, 0, 0, 0.7);
-            color: #f5f5f5;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
+            color: white;
+            font-size: 2.5rem;
+            padding: 0.2rem 0.6rem;
             cursor: pointer;
-            opacity: 0;
-            box-shadow: 0 0 18px rgba(0, 0, 0, 0.7);
+            border-radius: 6px;
+            opacity: 0;                   /* freccia nascosta */
+            pointer-events: none;         /* disabilitata finché non in hover */
             transition:
-                opacity 0.2s ease,
-                transform 0.15s ease,
-                background-color 0.2s ease;
+                opacity 0.3s ease,
+                background-color 0.15s ease,
+                transform 0.1s ease;
         }
 
         /* posizionamento sinistra / destra */
         .amb-banner-arrow-left {
-            left: 1.5rem;
+            left: 12px;
         }
 
         .amb-banner-arrow-right {
-            right: 1.5rem;
+            right: 12px;
         }
 
         /* frecce visibili solo in hover */
         .random-banner:hover .amb-banner-arrow {
             opacity: 1;
+            pointer-events: auto;
         }
 
         /* hover “Netflix-style” */
         .amb-banner-arrow:hover {
-            background-color: rgba(255, 255, 255, 0.15);
-            transform: translateY(-50%) scale(1.06);
+            background: rgba(255,255,255,0.75);
+            color: black;
+            transform: translateY(-50%) scale(1.15);
         }
 
 
