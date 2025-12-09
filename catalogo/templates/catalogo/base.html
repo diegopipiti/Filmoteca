@@ -813,7 +813,18 @@
                             Admin
                         </a>
                     </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link d-flex align-items-center" href="{% url 'random_movie' %}" aria-label="Film casuale">
+                            <img src="{% static 'catalogo/dadi.png' %}"
+                                alt="Casuale"
+                                style="height: 28px; width: auto; display: block; background: transparent; padding: 0; border: none;">
+                        </a>
+                    </li>
                 </ul>
+
+
+
 
                 <!-- Barra di ricerca globale -->
                 <form class="d-flex align-items-center" method="get"

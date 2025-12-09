@@ -825,3 +825,12 @@ def movie_by_genre(request):
             "random_movie": random_movie,
         },
     )
+
+
+def random_movie(request):
+    ids = list(Movie.objects.values_list("pk", flat=True))
+    if not ids:
+        messages.error(request, "Nessun film disponibile.")
+        return redirect("movie_list")
+    pk = random.choice(ids)
+    return redirect("movie_detail", pk=pk)

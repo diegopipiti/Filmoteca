@@ -15,4 +15,5 @@ urlpatterns = [
     ),
     path("scan/", views.scan_folder, name="scan_folder"),
     path("update_posters/", views.update_posters, name="update_posters"),
+    path("random/", views.random_movie, name="random_movie"),
 ]
