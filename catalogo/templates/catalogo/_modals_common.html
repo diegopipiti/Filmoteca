@@ -1,0 +1,205 @@
+<!-- MODAL FILTRI AVANZATI -->
+<div class="modal fade" id="filterModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content bg-dark text-light border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Filtri avanzati</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+      </div>
+
+      <!-- FORM FILTRI (GET) -->
+      <form method="get" action="{% url 'movie_list' %}">
+        <div class="modal-body">
+          <div class="row g-3">
+
+            <!-- Titolo -->
+            <div class="col-12">
+              <label class="form-label">Titolo contiene</label>
+              <input type="text" name="titolo" class="form-control form-control-sm"
+                     value="{{ filtri.titolo|default:'' }}">
+            </div>
+
+            <!-- Anno da/a -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Anno</label>
+              <div class="d-flex gap-1">
+                <input type="number" name="anno_da" class="form-control form-control-sm"
+                       placeholder="da"
+                       value="{{ filtri.anno_da|default:'' }}">
+                <input type="number" name="anno_a" class="form-control form-control-sm"
+                       placeholder="a"
+                       value="{{ filtri.anno_a|default:'' }}">
+              </div>
+            </div>
+
+            <!-- Genere -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Genere contiene</label>
+              <input type="text" name="genere" class="form-control form-control-sm"
+                     value="{{ filtri.genere|default:'' }}">
+            </div>
+
+            <!-- Regista -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Regista contiene</label>
+              <input type="text" name="regista" class="form-control form-control-sm"
+                     value="{{ filtri.regista|default:'' }}">
+            </div>
+
+            <!-- Visto -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Già visto?</label>
+              <select name="visto" class="form-select form-select-sm">
+                <option value="" {% if not filtri.visto %}selected{% endif %}>Tutti</option>
+                <option value="si" {% if filtri.visto == "si" %}selected{% endif %}>Solo visti</option>
+                <option value="no" {% if filtri.visto == "no" %}selected{% endif %}>Solo non visti</option>
+              </select>
+            </div>
+
+            <!-- Voto -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Voto</label>
+              <div class="d-flex gap-1">
+                <input type="number" name="voto_da" class="form-control form-control-sm"
+                       placeholder="da"
+                       value="{{ filtri.voto_da|default:'' }}">
+                <input type="number" name="voto_a" class="form-control form-control-sm"
+                       placeholder="a"
+                       value="{{ filtri.voto_a|default:'' }}">
+              </div>
+            </div>
+
+            <!-- Codifica -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Codifica contiene</label>
+              <input type="text" name="codifica" class="form-control form-control-sm"
+                     value="{{ filtri.codifica|default:'' }}">
+            </div>
+
+            <!-- Estensione -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Estensione contiene</label>
+              <input type="text" name="estensione" class="form-control form-control-sm"
+                     value="{{ filtri.estensione|default:'' }}">
+            </div>
+
+            <!-- Dimensione file -->
+            <div class="col-12 col-md-6">
+              <label class="form-label">Dimensione file (MB)</label>
+              <div class="d-flex gap-1">
+                <input type="number" step="0.01" name="dim_da"
+                       class="form-control form-control-sm"
+                       placeholder="da"
+                       value="{{ filtri.dim_da|default:'' }}">
+                <input type="number" step="0.01" name="dim_a"
+                       class="form-control form-control-sm"
+                       placeholder="a"
+                       value="{{ filtri.dim_a|default:'' }}">
+              </div>
+            </div>
+
+            <!-- Percorso -->
+            <div class="col-12">
+              <label class="form-label">Percorso contiene</label>
+              <input type="text" name="percorso" class="form-control form-control-sm"
+                     value="{{ filtri.percorso|default:'' }}">
+            </div>
+
+          </div>
+        </div>
+
+        <div class="modal-footer border-secondary">
+          <a href="{% url 'movie_list' %}" class="btn btn-outline-light btn-sm">
+            Reset
+          </a>
+          <button type="submit" class="btn btn-sm">
+            Applica filtri
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SCANSIONE CARTELLA -->
+<div class="modal fade" id="scanModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-scrollable">
+    <div class="modal-content bg-dark text-light border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Scansiona cartella</h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Chiudi"></button>
+      </div>
+
+      <form method="post" action="{% url 'scan_folder' %}" class="small">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label">Percorso cartella</label>
+            <input type="text"
+                   name="base_dir"
+                   class="form-control form-control-sm"
+                   placeholder="Es. D:\Film">
+          </div>
+          <p class="form-text text-light mt-2">
+            Cerca file video nelle sottocartelle e li aggiunge al catalogo
+            (solo nuovi percorsi).
+          </p>
+        </div>
+
+        <div class="modal-footer border-secondary">
+          <button type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  data-bs-dismiss="modal">
+            Annulla
+          </button>
+          <button type="submit" class="btn btn-outline-light btn-sm">
+            Scansiona e aggiungi film
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL METADATI -->
+<div class="modal fade" id="metadataModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-md modal-dialog-scrollable">
+    <div class="modal-content bg-dark text-light border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Aggiorna metadati</h5>
+        <button type="button"
+                class="btn-close btn-close-white"
+                data-bs-dismiss="modal"
+                aria-label="Chiudi"></button>
+      </div>
+
+      <form method="post" action="{% url 'update_posters' %}" class="small">
+        {% csrf_token %}
+        <div class="modal-body">
+          <p class="small mb-2">
+            Trova e aggiorna i metadati mancanti consultando TMDB
+            (trama, anno, genere, regista, locandina) per i film senza trama.
+          </p>
+          <p class="small text-muted mb-0">
+            L'operazione potrebbe richiedere qualche istante a seconda del numero di film.
+          </p>
+        </div>
+
+        <div class="modal-footer border-secondary">
+          <button type="button"
+                  class="btn btn-outline-secondary btn-sm"
+                  data-bs-dismiss="modal">
+            Annulla
+          </button>
+          <button type="submit" class="btn btn-outline-light btn-sm">
+            Aggiorna metadati mancanti
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
