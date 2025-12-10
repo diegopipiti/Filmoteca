@@ -15,12 +15,10 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from .models import Movie
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from .tmdb import fetch_movie_data_from_tmdb, apply_tmdb_data
 
 
 VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".mpg", ".mpeg"]
-
-TMDB_SEARCH_URL = "https://api.themoviedb.org/3/search/movie"
-TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w500"
 
 # Regex per intercettare anni plausibili (1900–2039, puoi restringerla se vuoi)
 YEAR_RE = re.compile(r"(19[0-9]{2}|20[0-3][0-9])")
@@ -132,110 +130,6 @@ def build_movie_filters(request):
         "percorso": percorso,
     }
     return qs, filtri
-
-
-def fetch_movie_data_from_tmdb(
-    title: str, year: Optional[int] = None
-) -> Optional[dict]:
-    """
-    Chiede a TMDB i dati di un film e restituisce un dizionario con:
-      - poster_url
-      - overview (trama)
-      - year
-      - director
-      - genres (stringa tipo "Drammatico, Thriller")
-
-    Se non trova niente o c'è un errore, restituisce None.
-    """
-    api_key = getattr(settings, "TMDB_API_KEY", None)
-    if not api_key or api_key == "INSERISCI_LA_TUA_API_KEY_QUI":
-        return None
-
-    # 1) Cerca il film per titolo (e opzionalmente anno)
-    params = {
-        "api_key": api_key,
-        "query": title,
-        "include_adult": "false",
-        "language": "it-IT",
-    }
-    if year:
-        params["year"] = year
-
-    try:
-        resp = requests.get(TMDB_SEARCH_URL, params=params, timeout=5)
-        resp.raise_for_status()
-    except Exception:
-        return None
-
-    data = resp.json()
-    results = data.get("results") or []
-    if not results:
-        return None
-
-    movie = results[0]
-    movie_id = movie.get("id")
-    poster_path = movie.get("poster_path")
-    release_date = movie.get("release_date") or ""
-    overview_it = movie.get("overview") or ""
-
-    director_name = None
-    genres_str = None
-
-    # 2) Chiede dettagli + credits per avere regista e generi
-    if movie_id:
-        try:
-            detail_resp = requests.get(
-                f"https://api.themoviedb.org/3/movie/{movie_id}",
-                params={
-                    "api_key": api_key,
-                    "language": "it-IT",
-                    "append_to_response": "credits",
-                },
-                timeout=5,
-            )
-            detail_resp.raise_for_status()
-            detail_data = detail_resp.json()
-
-            # generi
-            genres = detail_data.get("genres") or []
-            if genres:
-                genres_str = ", ".join(g.get("name") for g in genres if g.get("name"))
-
-            # regista dai credits
-            credits = detail_data.get("credits") or {}
-            crew = credits.get("crew") or []
-            for person in crew:
-                if person.get("job") == "Director":
-                    director_name = person.get("name")
-                    break
-
-            # se l'overview dal search era vuota, prova con quella dei dettagli
-            if not overview_it:
-                overview_it = detail_data.get("overview") or ""
-
-        except Exception:
-            # se fallisce questa chiamata, pazienza, useremo solo i dati base
-            pass
-
-    # calcolo poster_url completo
-    poster_url = f"{TMDB_IMAGE_BASE}{poster_path}" if poster_path else None
-
-    # estrazione anno da release_date (formato "YYYY-MM-DD")
-    year_val: Optional[int] = None
-    if release_date and len(release_date) >= 4:
-        try:
-            year_val = int(release_date[:4])
-        except ValueError:
-            year_val = None
-
-    result = {
-        "poster_url": poster_url,
-        "overview": (overview_it.strip() or None),
-        "year": year_val,
-        "director": director_name,
-        "genres": genres_str,
-    }
-    return result
 
 
 def movie_list(request):
@@ -470,18 +364,9 @@ def movie_delete(request, pk):
 
 
 def update_posters(request):
-    """
-    Prova a recuperare locandina, trama, anno, regista e genere
-    da TMDB per i film che non hanno ancora questi dati completi.
-    """
     if request.method != "POST":
         return redirect("movie_list")
 
-    # puoi decidere qui il criterio di selezione:
-    # - solo quelli senza locandina
-    # - oppure tutti i film
-    # per non fare troppe chiamate, restiamo sui film senza locandina
-    # Aggiorna solo i film che NON hanno ancora la trama
     movies = Movie.objects.filter(Q(trama__isnull=True) | Q(trama__exact=""))
 
     count_checked = 0
@@ -493,35 +378,7 @@ def update_posters(request):
         if not data:
             continue
 
-        changed_fields = []
-
-        poster_url = data.get("poster_url")
-        overview = data.get("overview")
-        year_val = data.get("year")
-        director_name = data.get("director")
-        genres_str = data.get("genres")
-
-        # aggiorna SOLO se il campo è vuoto, per non sovrascrivere
-        if poster_url and not movie.locandina_url:
-            movie.locandina_url = poster_url
-            changed_fields.append("locandina_url")
-
-        if overview and not movie.trama:
-            movie.trama = overview
-            changed_fields.append("trama")
-
-        if year_val and not movie.anno:
-            movie.anno = year_val
-            changed_fields.append("anno")
-
-        if director_name and not movie.regista:
-            movie.regista = director_name
-            changed_fields.append("regista")
-
-        if genres_str and not movie.genere:
-            movie.genere = genres_str
-            changed_fields.append("genere")
-
+        changed_fields = apply_tmdb_data(movie, data, overwrite=False)
         if changed_fields:
             movie.save(update_fields=changed_fields)
             count_updated += 1
@@ -547,38 +404,22 @@ def update_movie_poster(request, pk):
     # qui usiamo la stessa funzione che usi in update_posters
     # supponiamo che ritorni un dizionario con i dati, oppure None se non trova nulla
     tmdb_data = fetch_movie_data_from_tmdb(movie.titolo, movie.anno)
-
     if not tmdb_data:
         messages.warning(
             request, f"Nessun risultato trovato su TMDB per '{movie.titolo}'."
         )
         return redirect("movie_list")
 
-    # Adatta questi campi a come hai strutturato la risposta TMDB
-    poster_url = tmdb_data.get("poster_url")
-    trama = tmdb_data.get("overview") or tmdb_data.get("trama")
-    anno = tmdb_data.get("year") or tmdb_data.get("anno")
-    regista = tmdb_data.get("director") or tmdb_data.get("regista")
-    genere = tmdb_data.get("genres") or tmdb_data.get("genere")
+    changed = apply_tmdb_data(movie, tmdb_data, overwrite=True)
+    if changed:
+        movie.save(update_fields=changed)
+        messages.success(
+            request,
+            f"Dati aggiornati da TMDB per {movie.titolo} ({', '.join(changed)}).",
+        )
+    else:
+        messages.info(request, "Nessun campo aggiornato.")
 
-    if poster_url:
-        movie.locandina_url = poster_url
-    if trama:
-        movie.trama = trama
-    if anno:
-        movie.anno = anno
-    if regista:
-        movie.regista = regista
-    if genere:
-        # se genres è una lista, uniscila
-        if isinstance(genere, (list, tuple)):
-            movie.genere = ", ".join(genere)
-        else:
-            movie.genere = genere
-
-    movie.save()
-
-    messages.success(request, f"Metadati aggiornati per '{movie.titolo}'.")
     return redirect("movie_list")
 
 
