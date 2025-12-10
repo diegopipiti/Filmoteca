@@ -1,27 +1,106 @@
 {% extends "catalogo/base.html" %}
 
-{% block title %}{{ movie.titolo }} – Dettaglio{% endblock %}
+{% block title %}{{ movie.titolo }} - Dettaglio{% endblock %}
 
 {% block content %}
+
+<style>
+/* Pulsanti azione */
+.action-buttons {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.25rem;
+}
+.action-buttons form { margin: 0; }
+
+/* Pannello voti */
+.rating-panel {
+    max-width: 340px;
+    margin: 2.5rem auto 1rem auto;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.rating-title {
+    font-weight: 700;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+.rating-grid {
+    display: grid;
+    gap: 0.65rem;
+}
+.rating-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+.rating-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    color: #cfd8dc;
+    min-width: 120px;
+}
+.rating-value {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 120px;
+}
+.rating-number {
+    font-weight: 700;
+    color: #e0e0e0;
+}
+.rating-panel .rating-stars {
+    position: relative;
+    font-size: 1.05rem;
+    line-height: 1;
+    display: inline-block;
+    width: 5.2ch; /* allinea le stelle */
+}
+.rating-panel .rating-stars .bg { color: #555; }
+.rating-panel .rating-stars .fill {
+    position: absolute;
+    inset: 0;
+    color: #f2c94c; /* giallo */
+    overflow: hidden;
+    white-space: nowrap;
+}
+.rating-row.disabled .rating-label,
+.rating-row.disabled .rating-stars,
+.rating-row.disabled .rating-number {
+    color: #7f8c8d;
+}
+
+/* Meta file attenuate */
+.file-meta {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.65);
+    margin-top: 2.5rem !important;   /* più distacco */
+    padding-top: 0.75rem;             /* evita il collasso del margin */
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+.file-meta .meta-line { margin-bottom: 0.35rem; }
+.file-meta .meta-path { font-size: 0.8rem; color: rgba(255,255,255,0.5); word-break: break-all; }
+</style>
+
 <div class="container-fluid px-3 px-lg-5 my-4 position-relative">
 
     {# FRECCIA SINISTRA #}
     {% if prev_movie %}
-        <a href="{% url 'movie_detail' prev_movie.pk %}"
-           class="reader-arrow reader-arrow-left">
-            &#10094;
-        </a>
+        <a href="{% url 'movie_detail' prev_movie.pk %}" class="reader-arrow reader-arrow-left">&#10094;</a>
     {% endif %}
 
     {# FRECCIA DESTRA #}
     {% if next_movie %}
-        <a href="{% url 'movie_detail' next_movie.pk %}"
-           class="reader-arrow reader-arrow-right">
-            &#10095;
-        </a>
+        <a href="{% url 'movie_detail' next_movie.pk %}" class="reader-arrow reader-arrow-right">&#10095;</a>
     {% endif %}
 
-    {# CONTENUTO DETTAGLIO #}
     <div class="row g-4 align-items-start">
         <div class="col-12 col-md-4 col-lg-3">
             {% if movie.locandina_url %}
@@ -29,11 +108,8 @@
                      class="img-fluid rounded shadow"
                      alt="{{ movie.titolo }}">
             {% else %}
-                <div class="bg-secondary rounded d-flex align-items-center justify-content-center"
-                     style="padding-top:150%;">
-                    <span class="small text-center px-2">
-                        Nessuna locandina disponibile
-                    </span>
+                <div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="padding-top:150%;">
+                    <span class="small text-center px-2">Nessuna locandina disponibile</span>
                 </div>
             {% endif %}
         </div>
@@ -54,10 +130,10 @@
                 {% endif %}
 
                 {% if movie.voto %}
-                <span class="d-inline-flex align-items-center ms-2">
-                    <span class="rating-stars" data-voto="{{ movie.voto }}"></span>
-                    <span class="small text-secondary ms-1">({{ movie.voto }}/10)</span>
-                </span>
+                    <span class="d-inline-flex align-items-center ms-2">
+                        <span class="rating-stars-top" data-voto="{{ movie.voto }}"></span>
+                        <span class="small text-secondary ms-1">({{ movie.voto }}/10)</span>
+                    </span>
                 {% endif %}
             </div>
 
@@ -75,7 +151,7 @@
                 </p>
             {% endif %}
 
-            <!-- RECENSIONE (solo pagina dettaglio) -->
+            <!-- RECENSIONE -->
             {% if movie.recensione %}
                 <div class="mb-4">
                     <span class="text-secondary fw-semibold d-block mb-1">La tua recensione</span>
@@ -85,112 +161,125 @@
                 </div>
             {% endif %}
 
-            <!-- DATA ULTIMA VISIONE -->
-            {% if movie.ultima_visione %}
-                <p class="small text-secondary mb-3">
-                    <strong class="text-light">Ultima visione:</strong>
-                    {{ movie.ultima_visione|date:"d/m/Y" }}
-                </p>
+            <!-- Griglia dei voti -->
+            {% if movie.public_rating %}
+                <div class="rating-panel text-center">
+                    <div class="rating-title">Voti</div>
+                    <div class="rating-grid">
+
+                        <div class="rating-row">
+                            <div class="rating-label">Pubblico</div>
+                            <div class="rating-value">
+                                <span class="rating-number">{{ movie.public_rating|floatformat:1 }}</span>
+                                <span class="rating-stars">
+                                    <span class="bg">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                                    <span class="fill" style="width: calc(({{ movie.public_rating|default:0 }} / 10) * 100%);">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="rating-row disabled">
+                            <div class="rating-label">Critica</div>
+                            <div class="rating-value">
+                                <span class="rating-number">n/d</span>
+                                <span class="rating-stars">
+                                    <span class="bg">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                                    <span class="fill" style="width: 0%;">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if movie.voto %}
+                        <div class="rating-row">
+                            <div class="rating-label">Voto personale</div>
+                            <div class="rating-value">
+                                <span class="rating-number">{{ movie.voto|floatformat:1 }}</span>
+                                <span class="rating-stars">
+                                    <span class="bg">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                                    <span class="fill" style="width: calc(({{ movie.voto|default:0 }} / 10) * 100%);">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </div>
             {% endif %}
 
             <!-- DETTAGLI FILE -->
-            <div class="small text-secondary mb-4">
+            <div class="mt-4 text-center file-meta">
+                {% if movie.ultima_visione %}
+                    <div class="meta-line">Ultima visione: {{ movie.ultima_visione }}</div>
+                {% endif %}
                 {% if movie.dimensione_file_mb %}
-                    <p class="mb-1">
-                        <strong class="text-light">Dimensione:</strong>
-                        {{ movie.dimensione_file_mb }} MB
-                    </p>
+                    <div class="meta-line">Dimensione: {{ movie.dimensione_file_mb }} MB</div>
                 {% endif %}
-
-                {% if movie.codifica %}
-                    <p class="mb-1">
-                        <strong class="text-light">Codifica:</strong>
-                        {{ movie.codifica }}
-                    </p>
-                {% endif %}
-
                 {% if movie.estensione %}
-                    <p class="mb-1">
-                        <strong class="text-light">Estensione:</strong>
-                        {{ movie.estensione }}
-                    </p>
+                    <div class="meta-line">Estensione: {{ movie.estensione }}</div>
                 {% endif %}
-
                 {% if movie.percorso %}
-                    <p class="mb-1">
-                        <strong class="text-light">Percorso file:</strong><br>
-                        <span class="text-light">{{ movie.percorso }}</span>
-                    </p>
+                    <div class="meta-line mt-2">Percorso file:<br><span class="meta-path">{{ movie.percorso }}</span></div>
                 {% endif %}
-
-        </div>
-
-
-            <!-- BOTTONI DELLA MODALIT° A TUTTO SCHERMO -->
-        <div class="d-flex justify-content-center align-items-center gap-3 mt-4">
-
-            <!-- RIPRODUCI -->
-            <a href="{% url 'movie_play' movie.pk %}?next={{ request.get_full_path|urlencode }}"
-            class="amb-circle-btn amb-play"
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            data-bs-title="Riproduci">
-                <i class="bi bi-play-fill"></i>
-            </a>
-
-            <!-- MODIFICA -->
-            <a href="{% url 'movie_edit' movie.pk %}"
-            class="amb-circle-btn"
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            data-bs-title="Modifica">
-                <i class="bi bi-pencil-square"></i>
-            </a>
-
-            <!-- AGGIORNA METADATI -->
-            <form method="post"
-                action="{% url 'update_movie_poster' movie.pk %}"
-                class="d-inline">
-                {% csrf_token %}
-                <button type="submit"
-                        class="amb-circle-btn"
-                        data-bs-toggle="tooltip"
-                        data-bs-placement="top"
-                        data-bs-title="Aggiorna metadati">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
-            </form>
-
-            <!-- ELIMINA -->
-            <form method="post"
-                action="{% url 'movie_delete' movie.pk %}"
-                class="d-inline"
-                onsubmit="return confirm('Sei sicuro di voler eliminare questo film?');">
-                {% csrf_token %}
-                <button type="submit"
-                        class="amb-circle-btn amb-danger"
-                        data-bs-toggle="tooltip"
-                        data-bs-placement="top"
-                        data-bs-title="Elimina">
-                    <i class="bi bi-trash3"></i>
-                </button>
-            </form>
-
-            <!-- TORNA ALLA VETRINA (riapre anche la modale di quel film) -->
-            <a href="{% url 'movie_list' %}?open={{ movie.pk }}"
-            class="amb-circle-btn"
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            data-bs-title="Torna alla vetrina">
-                <i class="bi bi-grid-3x3-gap"></i>
-            </a>
-        </div>
-
-
+            </div>
 
         </div>
     </div>
 </div>
+
+<!-- PULSANTI AZIONE CENTRATI -->
+<div class="text-center my-4">
+    <div class="action-buttons">
+        <!-- RIPRODUCI -->
+        <a href="{% url 'movie_play' movie.pk %}?next={{ request.get_full_path|urlencode }}"
+           class="amb-circle-btn amb-play"
+           data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Riproduci">
+            <i class="bi bi-play-fill"></i>
+        </a>
+
+        <!-- MODIFICA -->
+        <a href="{% url 'movie_edit' movie.pk %}"
+           class="amb-circle-btn"
+           data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Modifica">
+            <i class="bi bi-pencil-square"></i>
+        </a>
+
+        <!-- AGGIORNA METADATI -->
+        <form method="post"
+              action="{% url 'update_movie_poster' movie.pk %}"
+              class="d-inline-block">
+            {% csrf_token %}
+            <button type="submit"
+                    class="amb-circle-btn"
+                    data-bs-toggle="tooltip" data-bs-placement="top"
+                    data-bs-title="Aggiorna metadati">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </form>
+
+        <!-- ELIMINA -->
+        <form method="post"
+              action="{% url 'movie_delete' movie.pk %}"
+              class="d-inline-block"
+              onsubmit="return confirm('Sei sicuro di voler eliminare questo film?');">
+            {% csrf_token %}
+            <button type="submit"
+                    class="amb-circle-btn amb-danger"
+                    data-bs-toggle="tooltip" data-bs-placement="top"
+                    data-bs-title="Elimina">
+                <i class="bi bi-trash3"></i>
+            </button>
+        </form>
+
+        <!-- TORNA ALLA VETRINA -->
+        <a href="{% url 'movie_list' %}?open={{ movie.pk }}"
+           class="amb-circle-btn"
+           data-bs-toggle="tooltip" data-bs-placement="top"
+           data-bs-title="Torna alla vetrina">
+            <i class="bi bi-grid-3x3-gap"></i>
+        </a>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -198,10 +287,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     function renderStars(container, voto10) {
         var voto = parseFloat(voto10);
-        if (isNaN(voto)) {
-            container.innerHTML = '';
-            return;
-        }
+        if (isNaN(voto)) return;
         var stars = Math.max(0, Math.min(5, voto / 2));
         var full = Math.floor(stars);
         var half = (stars - full) >= 0.5 ? 1 : 0;
@@ -213,7 +299,7 @@ document.addEventListener('DOMContentLoaded', function () {
         container.innerHTML = html;
     }
 
-    var ratingEl = document.querySelector('.rating-stars');
+    var ratingEl = document.querySelector('.rating-stars-top');
     if (ratingEl) {
         var voto = ratingEl.getAttribute('data-voto');
         renderStars(ratingEl, voto);
@@ -222,11 +308,11 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        tooltipTriggerList.map(function (el) {
-            return new bootstrap.Tooltip(el);
-        });
+document.addEventListener('DOMContentLoaded', function () {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (el) {
+        return new bootstrap.Tooltip(el);
     });
+});
 </script>
 {% endblock %}

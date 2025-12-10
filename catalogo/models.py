@@ -31,6 +31,23 @@ class Movie(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(10)], null=True, blank=True
     )
 
+    # Valutazioni pubbliche da TMDB
+    public_rating = models.FloatField(
+        null=True, blank=True, verbose_name="Voto pubblico TMDB"
+    )
+    public_votes = models.IntegerField(
+        null=True, blank=True, verbose_name="N. voti TMDB"
+    )
+
+    # Valutazioni critica da TMDB
+    critic_rating = models.FloatField(
+        null=True, blank=True, verbose_name="Voto critica"
+    )
+    critic_source = models.CharField(max_length=50, blank=True)  # es. Metascore, Rotten
+    critic_votes = models.IntegerField(null=True, blank=True)  # se disponibile
+    imdb_id = models.CharField(max_length=20, blank=True)  # per cache
+
+    # Extra
     recensione = models.TextField(blank=True, null=True, verbose_name="Recensione")
     ultima_visione = models.DateField(
         blank=True, null=True, verbose_name="Data ultima visione"

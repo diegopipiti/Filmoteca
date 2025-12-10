@@ -20,6 +20,8 @@ class MovieForm(forms.ModelForm):
             "voto",
             "recensione",
             "ultima_visione",
+            "public_rating",
+            "public_votes",
         ]
         widgets = {
             "visto": forms.CheckboxInput(attrs={"class": "form-check-input"}),

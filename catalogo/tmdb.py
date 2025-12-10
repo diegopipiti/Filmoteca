@@ -90,12 +90,17 @@ def fetch_movie_data_from_tmdb(
         except ValueError:
             year_val = None
 
+    vote_average = movie.get("vote_average")
+    vote_count = movie.get("vote_count")
+
     return {
         "poster_url": poster_url,
         "overview": (overview_it.strip() or None),
         "year": year_val,
         "director": director_name,
         "genres": genres_str,
+        "public_rating": vote_average,
+        "public_votes": vote_count,
     }
 
 
@@ -117,6 +122,17 @@ def apply_tmdb_data(movie, data: dict, overwrite: bool = True) -> list[str]:
     if poster_url and (overwrite or not movie.locandina_url):
         movie.locandina_url = poster_url
         changed.append("locandina_url")
+
+    public_rating = data.get("public_rating")
+    public_votes = data.get("public_votes")
+
+    if public_rating is not None and (overwrite or movie.public_rating is None):
+        movie.public_rating = public_rating
+        changed.append("public_rating")
+
+    if public_votes is not None and (overwrite or movie.public_votes is None):
+        movie.public_votes = public_votes
+        changed.append("public_votes")
 
     if overview and (overwrite or not movie.trama):
         movie.trama = overview
