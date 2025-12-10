@@ -25,6 +25,7 @@ VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".mpg", ".mpeg"]
 YEAR_RE = re.compile(r"(19[0-9]{2}|20[0-3][0-9])")
 
 
+# Sezione Helper------------------------------
 def group_movies_by_genre(movies, max_per_genre: int = 24):
     """
     Restituisce una lista di sezioni già pronte per il template
@@ -78,6 +79,18 @@ def group_movies_by_genre(movies, max_per_genre: int = 24):
         )
 
     return sezioni
+
+
+def get_random_movie_with_poster():
+    qs = Movie.objects.exclude(locandina_url__isnull=True).exclude(
+        locandina_url__exact=""
+    )
+    if not qs.exists():
+        return None
+    return random.choice(list(qs))
+
+
+# ---------------------------------------------
 
 
 def build_movie_filters(request):
@@ -173,9 +186,7 @@ def movie_list(request):
     all_with_poster = Movie.objects.exclude(locandina_url__isnull=True).exclude(
         locandina_url__exact=""
     )
-    random_movie = (
-        random.choice(list(all_with_poster)) if all_with_poster.exists() else None
-    )
+    random_movie = random_movie = get_random_movie_with_poster()
 
     return render(
         request,
@@ -190,17 +201,6 @@ def movie_list(request):
             "random_movie": random_movie,
         },
     )
-
-
-def _apri_file(path: str):
-    """Apri il file video con il player predefinito del sistema operativo."""
-    sistema = platform.system()
-    if sistema == "Windows":
-        os.startfile(path)  # type: ignore[attr-defined]
-    elif sistema == "Darwin":  # macOS
-        subprocess.Popen(["open", path])
-    else:  # Linux
-        subprocess.Popen(["xdg-open", path])
 
 
 def movie_play(request, pk):
@@ -446,9 +446,7 @@ def movie_by_genre(request):
     all_with_poster = Movie.objects.exclude(locandina_url__isnull=True).exclude(
         locandina_url__exact=""
     )
-    random_movie = (
-        random.choice(list(all_with_poster)) if all_with_poster.exists() else None
-    )
+    random_movie = get_random_movie_with_poster()
 
     return render(
         request,
