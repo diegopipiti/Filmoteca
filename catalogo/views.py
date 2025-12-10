@@ -9,17 +9,12 @@ import random
 from typing import Optional, Tuple
 import sys
 from collections import defaultdict
-
 from django.conf import settings
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import HttpResponse
-from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from .models import Movie
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from typing import Optional
-from .models import Movie
 
 
 VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".mpg", ".mpeg"]
@@ -69,6 +64,74 @@ NOISE_TOKENS = {
     "proper",
     "repack",
 }
+
+
+def build_movie_filters(request):
+    """
+    Applica i filtri letti dalla querystring e restituisce
+    la queryset filtrata e il dizionario dei filtri per il template.
+    """
+    qs = Movie.objects.all()
+
+    titolo = request.GET.get("titolo", "")
+    anno_da = request.GET.get("anno_da", "")
+    anno_a = request.GET.get("anno_a", "")
+    genere = request.GET.get("genere", "")
+    regista = request.GET.get("regista", "")
+    visto = request.GET.get("visto", "")  # "", "si", "no"
+    voto_da = request.GET.get("voto_da", "")
+    voto_a = request.GET.get("voto_a", "")
+    codifica = request.GET.get("codifica", "")
+    estensione = request.GET.get("estensione", "")
+    dim_da = request.GET.get("dim_da", "")
+    dim_a = request.GET.get("dim_a", "")
+    percorso = request.GET.get("percorso", "")
+
+    if titolo:
+        qs = qs.filter(titolo__icontains=titolo)
+    if anno_da:
+        qs = qs.filter(anno__gte=anno_da)
+    if anno_a:
+        qs = qs.filter(anno__lte=anno_a)
+    if genere:
+        qs = qs.filter(genere__icontains=genere)
+    if regista:
+        qs = qs.filter(regista__icontains=regista)
+    if visto == "si":
+        qs = qs.filter(visto=True)
+    elif visto == "no":
+        qs = qs.filter(visto=False)
+    if voto_da:
+        qs = qs.filter(voto__gte=voto_da)
+    if voto_a:
+        qs = qs.filter(voto__lte=voto_a)
+    if codifica:
+        qs = qs.filter(codifica__icontains=codifica)
+    if estensione:
+        qs = qs.filter(estensione__icontains=estensione)
+    if dim_da:
+        qs = qs.filter(dimensione_file_mb__gte=dim_da)
+    if dim_a:
+        qs = qs.filter(dimensione_file_mb__lte=dim_a)
+    if percorso:
+        qs = qs.filter(percorso__icontains=percorso)
+
+    filtri = {
+        "titolo": titolo,
+        "anno_da": anno_da,
+        "anno_a": anno_a,
+        "genere": genere,
+        "regista": regista,
+        "visto": visto,
+        "voto_da": voto_da,
+        "voto_a": voto_a,
+        "codifica": codifica,
+        "estensione": estensione,
+        "dim_da": dim_da,
+        "dim_a": dim_a,
+        "percorso": percorso,
+    }
+    return qs, filtri
 
 
 def fetch_movie_data_from_tmdb(
@@ -176,78 +239,9 @@ def fetch_movie_data_from_tmdb(
 
 
 def movie_list(request):
-    qs = Movie.objects.all().order_by("titolo")
 
-    # Leggi i parametri dalla query string (?titolo=...&anno_da=...)
-    titolo = request.GET.get("titolo", "")
-    anno_da = request.GET.get("anno_da", "")
-    anno_a = request.GET.get("anno_a", "")
-    genere = request.GET.get("genere", "")
-    regista = request.GET.get("regista", "")
-    visto = request.GET.get("visto", "")  # "", "si", "no"
-    voto_da = request.GET.get("voto_da", "")
-    voto_a = request.GET.get("voto_a", "")
-    codifica = request.GET.get("codifica", "")
-    estensione = request.GET.get("estensione", "")
-    dim_da = request.GET.get("dim_da", "")
-    dim_a = request.GET.get("dim_a", "")
-    percorso = request.GET.get("percorso", "")
-
-    # --- Applica i filtri uno per uno ---
-
-    if titolo:
-        qs = qs.filter(titolo__icontains=titolo)
-
-    if anno_da:
-        qs = qs.filter(anno__gte=anno_da)
-    if anno_a:
-        qs = qs.filter(anno__lte=anno_a)
-
-    if genere:
-        qs = qs.filter(genere__icontains=genere)
-
-    if regista:
-        qs = qs.filter(regista__icontains=regista)
-
-    if visto == "si":
-        qs = qs.filter(visto=True)
-    elif visto == "no":
-        qs = qs.filter(visto=False)
-
-    if voto_da:
-        qs = qs.filter(voto__gte=voto_da)
-    if voto_a:
-        qs = qs.filter(voto__lte=voto_a)
-
-    if codifica:
-        qs = qs.filter(codifica__icontains=codifica)
-
-    if estensione:
-        qs = qs.filter(estensione__icontains=estensione)
-
-    if dim_da:
-        qs = qs.filter(dimensione_file_mb__gte=dim_da)
-    if dim_a:
-        qs = qs.filter(dimensione_file_mb__lte=dim_a)
-
-    if percorso:
-        qs = qs.filter(percorso__icontains=percorso)
-
-    filtri = {
-        "titolo": titolo,
-        "anno_da": anno_da,
-        "anno_a": anno_a,
-        "genere": genere,
-        "regista": regista,
-        "visto": visto,
-        "voto_da": voto_da,
-        "voto_a": voto_a,
-        "codifica": codifica,
-        "estensione": estensione,
-        "dim_da": dim_da,
-        "dim_a": dim_a,
-        "percorso": percorso,
-    }
+    qs, filtri = build_movie_filters(request)
+    qs = qs.order_by("titolo")
 
     # --- PAGINAZIONE ---
     paginator = Paginator(qs, 24)  # 24 film per pagina
@@ -539,73 +533,6 @@ def update_posters(request):
             request,
             f"Controllati {count_checked} film, aggiornati {count_updated} record.",
         )
-
-    return redirect("movie_list")
-
-    """
-    Aggiorna la locandina SOLO per il film indicato.
-    Funziona sia per GET che per POST e poi torna alla lista.
-    """
-    movie = get_object_or_404(Movie, pk=pk)
-
-    url = fetch_poster_url_from_tmdb(movie.titolo, movie.anno)
-    if url:
-        movie.locandina_url = url
-        movie.save(update_fields=["locandina_url"])
-        messages.success(request, "Locandina aggiornata da TMDB per questo film.")
-    else:
-        messages.warning(request, "Nessuna locandina trovata su TMDB per questo film.")
-
-    return redirect("movie_list")
-
-    """
-    Aggiorna dati TMDB per il singolo film:
-    locandina, trama, anno, regista, genere.
-    """
-    movie = get_object_or_404(Movie, pk=pk)
-
-    data = fetch_movie_data_from_tmdb(movie.titolo, movie.anno)
-    if not data:
-        messages.warning(request, "Nessun dato trovato su TMDB per questo film.")
-        return redirect("movie_list")
-
-    changed_fields = []
-
-    poster_url = data.get("poster_url")
-    overview = data.get("overview")
-    year_val = data.get("year")
-    director_name = data.get("director")
-    genres_str = data.get("genres")
-
-    if poster_url and not movie.locandina_url:
-        movie.locandina_url = poster_url
-        changed_fields.append("locandina_url")
-
-    if overview and not movie.trama:
-        movie.trama = overview
-        changed_fields.append("trama")
-
-    if year_val and not movie.anno:
-        movie.anno = year_val
-        changed_fields.append("anno")
-
-    if director_name and not movie.regista:
-        movie.regista = director_name
-        changed_fields.append("regista")
-
-    if genres_str and not movie.genere:
-        movie.genere = genres_str
-        changed_fields.append("genere")
-
-    if changed_fields:
-        movie.save(update_fields=changed_fields)
-        messages.success(
-            request,
-            "Dati aggiornati da TMDB per questo film "
-            f"({', '.join(changed_fields)}).",
-        )
-    else:
-        messages.info(request, "Nessun campo aggiornato: i dati erano già presenti.")
 
     return redirect("movie_list")
 
