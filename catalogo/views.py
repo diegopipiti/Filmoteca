@@ -19,51 +19,65 @@ from .tmdb import fetch_movie_data_from_tmdb, apply_tmdb_data
 from .utils import guess_title_and_year
 
 
-
 VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".mpg", ".mpeg"]
 
 # Regex per intercettare anni plausibili (1900–2039, puoi restringerla se vuoi)
 YEAR_RE = re.compile(r"(19[0-9]{2}|20[0-3][0-9])")
 
-# Token "rumore" tipici dei nomi file: lingue, codec, qualità, gruppi release, ecc.
-NOISE_TOKENS = {
-    "italian",
-    "italiano",
-    "eng",
-    "english",
-    "multi",
-    "sub",
-    "subs",
-    "ac3",
-    "dts",
-    "xvid",
-    "divx",
-    "h264",
-    "x264",
-    "h265",
-    "x265",
-    "dvdrip",
-    "bdrip",
-    "webrip",
-    "webdl",
-    "bluray",
-    "hdrip",
-    "cam",
-    "limited",
-    "uncut",
-    "extended",
-    "remastered",
-    "1080p",
-    "720p",
-    "2160p",
-    "4k",
-    "uhd",
-    "gbm",
-    "i_n_r_g",
-    "ita",
-    "proper",
-    "repack",
-}
+
+def group_movies_by_genre(movies, max_per_genre: int = 24):
+    """
+    Restituisce una lista di sezioni già pronte per il template
+    (comprese “Top rated” e “Continua a guardare” se presenti).
+    """
+    sezioni = []
+
+    # Top rated (voto >= 8)
+    top_rated = Movie.objects.filter(voto__gte=8).order_by("-voto", "-id")[
+        :max_per_genre
+    ]
+    if top_rated:
+        sezioni.append(
+            {
+                "titolo": "Film 4 stelle e oltre",
+                "movies": top_rated,
+                "special": True,
+                "slug": "top-rated",
+            }
+        )
+
+    # Continua a guardare (ultima_visione recente)
+    continua_qs = Movie.objects.filter(ultima_visione__isnull=False).order_by(
+        "-ultima_visione"
+    )[:12]
+    if continua_qs:
+        sezioni.append(
+            {
+                "titolo": "Continua a guardare",
+                "movies": continua_qs,
+                "special": True,
+                "slug": "continua-a-guardare",
+            }
+        )
+
+    # Raggruppamento per genere (dall’elenco movies passato)
+    gruppi = defaultdict(list)
+    for m in movies:
+        raw_genere = (m.genere or "").strip()
+        main_genre = raw_genere.split(",")[0].strip() if raw_genere else "Senza genere"
+        gruppi[main_genre].append(m)
+
+    for genere, lista in sorted(gruppi.items(), key=lambda x: x[0]):
+        sezioni.append(
+            {
+                "titolo": genere,
+                "movies": lista[:max_per_genre],
+                "special": False,
+                "slug": None,
+            }
+        )
+
+    return sezioni
 
 
 def build_movie_filters(request):
@@ -427,66 +441,8 @@ def update_movie_poster(request, pk):
 
 def movie_by_genre(request):
     movies = Movie.objects.all().order_by("-id")
+    sezioni = group_movies_by_genre(movies, max_per_genre=24)
 
-    gruppi = defaultdict(list)
-
-    # --- 1. SEZIONE SPECIALE: film con voto >= 8 (4 stelle) ---
-    top_rated = Movie.objects.filter(voto__gte=8).order_by("-voto", "-id")
-    # Limitiamoli a 24 o al numero che preferisci
-    TOP_LIMIT = 24
-    top_rated = top_rated[:TOP_LIMIT]
-
-    # --- 2. RAGGRUPPAMENTO PER GENERE ---
-    for m in movies:
-        raw_genere = (m.genere or "").strip()
-        if not raw_genere:
-            main_genre = "Senza genere"
-        else:
-            main_genre = raw_genere.split(",")[0].strip()
-        gruppi[main_genre].append(m)
-
-    MAX_PER_GENRE = 24
-
-    sezioni = []
-
-    # Aggiungi PRIMA la categoria speciale ⭐⭐⭐⭐
-    if top_rated:
-        sezioni.append(
-            {
-                "titolo": "⭐⭐⭐⭐ Film 4 stelle e oltre",
-                "movies": top_rated,
-                "special": True,  # per eventuali stili diversi in futuro
-            }
-        )
-
-    # CONTINUA A GUARDARE (in base a data_ultima_visione)
-    continua_qs = Movie.objects.filter(ultima_visione__isnull=False).order_by(
-        "-ultima_visione"
-    )[
-        :12
-    ]  # prendi gli ultimi visti
-
-    if continua_qs.exists():
-        sezioni.append(
-            {
-                "titolo": "Continua a guardare",
-                "slug": "continua-a-guardare",
-                "special": True,
-                "movies": continua_qs,
-            }
-        )
-
-    # Aggiungi tutte le altre categorie normali
-    for genere, lista in sorted(gruppi.items(), key=lambda x: x[0]):
-        sezioni.append(
-            {
-                "titolo": genere,
-                "movies": lista[:MAX_PER_GENRE],
-                "special": False,
-            }
-        )
-
-    # 🔥 Film random con locandina per l'header
     all_with_poster = Movie.objects.exclude(locandina_url__isnull=True).exclude(
         locandina_url__exact=""
     )

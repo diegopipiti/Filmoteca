@@ -177,6 +177,9 @@
     {% for section in sections %}
         <section class="mb-3">
             <h2 class="amb-genre-title text-light {% if section.special %}special-category-title{% endif %}">
+                {% if section.slug == "top-rated" %}
+                    <span class="text-warning" aria-hidden="true">&#9733;&#9733;&#9733;&#9733;</span>
+                {% endif %}
                 {{ section.titolo }}
             </h2>
             <div class="amb-genre-subtitle">
