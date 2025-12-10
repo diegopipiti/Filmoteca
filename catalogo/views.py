@@ -90,6 +90,12 @@ def get_random_movie_with_poster():
     return random.choice(list(qs))
 
 
+def pagination_base_query(request):
+    q = request.GET.copy()
+    q.pop("page", None)
+    return q.urlencode()
+
+
 # ---------------------------------------------
 
 
@@ -178,9 +184,7 @@ def movie_list(request):
         page_obj = paginator.page(paginator.num_pages)
 
     # mantieni i filtri nei link di paginazione
-    querydict = request.GET.copy()
-    querydict.pop("page", None)
-    base_query = querydict.urlencode()
+    base_query = pagination_base_query(request)
 
     # 🔥 Film random con locandina per l'header
     all_with_poster = Movie.objects.exclude(locandina_url__isnull=True).exclude(

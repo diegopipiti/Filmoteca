@@ -12,7 +12,6 @@ class Movie(models.Model):
     genere = models.CharField(max_length=100, blank=True)
     regista = models.CharField(max_length=100, blank=True)
     trama = models.TextField("Trama", blank=True)
-    trama = models.TextField("Trama", blank=True)
     visto = models.BooleanField(default=False)
 
     dimensione_file_mb = models.FloatField(
