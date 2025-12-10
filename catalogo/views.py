@@ -17,6 +17,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .tmdb import fetch_movie_data_from_tmdb, apply_tmdb_data
 from .utils import guess_title_and_year
+from .omdb import fetch_omdb_ratings
 
 
 VIDEO_EXTENSIONS = [".mp4", ".mkv", ".avi", ".mov", ".wmv", ".mpg", ".mpeg"]

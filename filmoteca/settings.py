@@ -109,7 +109,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Chiave per TMDB API.
 TMDB_API_KEY = "4a1ce42bf325082c86924f32159e7285"
-
+OMDB_API_KEY = "e476679b"
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/

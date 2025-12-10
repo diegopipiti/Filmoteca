@@ -56,25 +56,39 @@
     font-weight: 700;
     color: #e0e0e0;
 }
-.rating-panel .rating-stars {
-    position: relative;
+  /* Stelle nel pannello voti: usiamo star/half/empty come in alto */
+  .rating-panel .rating-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .rating-panel .rating-stars .star {
+    color: #f2c94c;
     font-size: 1.05rem;
     line-height: 1;
-    display: inline-block;
-    width: 5.2ch; /* allinea le stelle */
-}
-.rating-panel .rating-stars .bg { color: #555; }
-.rating-panel .rating-stars .fill {
+  }
+  .rating-panel .rating-stars .star.empty { color: #555; }
+  .rating-panel .rating-stars .star.half {
+    position: relative;
+    color: #555;
+  }
+  .rating-panel .rating-stars .star.half::before {
+    content: "\2605";
+    color: #f2c94c;
     position: absolute;
-    inset: 0;
-    color: #f2c94c; /* giallo */
+    left: 0;
+    top: 0;
+    width: 50%;
     overflow: hidden;
-    white-space: nowrap;
-}
+  }
 .rating-row.disabled .rating-label,
-.rating-row.disabled .rating-stars,
-.rating-row.disabled .rating-number {
-    color: #7f8c8d;
+  .rating-row.disabled .rating-stars,
+  .rating-row.disabled .rating-number {
+      color: #7f8c8d;
+  }
+  .rating-count {
+    font-size: 0.8rem;
+    color: #95a5a6;
 }
 
 /* Meta file attenuate */
@@ -171,21 +185,20 @@
                             <div class="rating-label">Pubblico</div>
                             <div class="rating-value">
                                 <span class="rating-number">{{ movie.public_rating|floatformat:1 }}</span>
-                                <span class="rating-stars">
-                                    <span class="bg">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-                                    <span class="fill" style="width: calc(({{ movie.public_rating|default:0 }} / 10) * 100%);">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-                                </span>
+                                <span class="rating-stars rating-stars-dyn" data-rating="{{ movie.public_rating|default:0 }}"></span>
                             </div>
                         </div>
 
-                        <div class="rating-row disabled">
+                        <div class="rating-row {% if not movie.critic_rating %}disabled{% endif %}">
                             <div class="rating-label">Critica</div>
                             <div class="rating-value">
-                                <span class="rating-number">n/d</span>
-                                <span class="rating-stars">
-                                    <span class="bg">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-                                    <span class="fill" style="width: 0%;">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-                                </span>
+                                {% if movie.critic_rating %}
+                                    <span class="rating-number">{{ movie.critic_rating|floatformat:1 }}</span>
+                                    <span class="rating-stars rating-stars-dyn" data-rating="{{ movie.critic_rating|default:0 }}"></span>
+                                    {% if movie.critic_source %}<span class="rating-count">{{ movie.critic_source }}</span>{% endif %}
+                                {% else %}
+                                    n/d
+                                {% endif %}
                             </div>
                         </div>
 
@@ -194,10 +207,7 @@
                             <div class="rating-label">Voto personale</div>
                             <div class="rating-value">
                                 <span class="rating-number">{{ movie.voto|floatformat:1 }}</span>
-                                <span class="rating-stars">
-                                    <span class="bg">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-                                    <span class="fill" style="width: calc(({{ movie.voto|default:0 }} / 10) * 100%);">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-                                </span>
+                                <span class="rating-stars rating-stars-dyn" data-rating="{{ movie.voto|default:0 }}"></span>
                             </div>
                         </div>
                         {% endif %}
@@ -299,11 +309,33 @@ document.addEventListener('DOMContentLoaded', function () {
         container.innerHTML = html;
     }
 
+    // Stella/e vicino al titolo (rating personale) - usa testo stella
+    function renderStarsTop(container, voto10) {
+        var voto = parseFloat(voto10);
+        if (isNaN(voto)) return;
+        var stars = Math.max(0, Math.min(5, voto / 2));
+        var full = Math.floor(stars);
+        var half = (stars - full) >= 0.5 ? 1 : 0;
+        var empty = 5 - full - half;
+        var html = '';
+        for (var i = 0; i < full; i++) html += '<span class="star">&#9733;</span>';
+        if (half) html += '<span class="star half">&#9733;</span>';
+        for (var i = 0; i < empty; i++) html += '<span class="star empty">&#9733;</span>';
+        container.innerHTML = html;
+    }
+
     var ratingEl = document.querySelector('.rating-stars-top');
     if (ratingEl) {
         var voto = ratingEl.getAttribute('data-voto');
-        renderStars(ratingEl, voto);
+        renderStarsTop(ratingEl, voto);
     }
+
+    // Stelle dinamiche nel pannello voti (pubblico/critica/personale)
+    var dynStars = document.querySelectorAll('.rating-stars-dyn');
+    dynStars.forEach(function (el) {
+        var voto = el.getAttribute('data-rating');
+        renderStars(el, voto);
+    });
 });
 </script>
 
@@ -316,3 +348,23 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 {% endblock %}
+  /* Stelle nel badge in alto (voto personale) */
+  .rating-stars-top {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .rating-stars-top .star {
+    font-size: 1rem;
+    line-height: 1;
+    display: inline-block;
+    color: #f2c94c;
+  }
+  .rating-stars-top .star.empty { color: #555; }
+  .rating-stars-top .star.half {
+    color: transparent;
+    background: linear-gradient(90deg, #f2c94c 50%, #555 50%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
