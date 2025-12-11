@@ -400,6 +400,13 @@ def update_posters(request):
             continue
 
         changed_fields = apply_tmdb_data(movie, data, overwrite=False)
+
+        imdb_id = data.get("imdb_id") or movie.imdb_id
+        if imdb_id:
+            omdb_data = fetch_omdb_ratings(imdb_id)
+            if omdb_data:
+                changed_fields += apply_tmdb_data(movie, omdb_data, overwrite=False)
+
         if changed_fields:
             movie.save(update_fields=changed_fields)
             count_updated += 1
@@ -432,6 +439,13 @@ def update_movie_poster(request, pk):
         return redirect("movie_list")
 
     changed = apply_tmdb_data(movie, tmdb_data, overwrite=True)
+
+    imdb_id = tmdb_data.get("imdb_id") or movie.imdb_id
+    if imdb_id:
+        omdb_data = fetch_omdb_ratings(imdb_id)
+        if omdb_data:
+            changed += apply_tmdb_data(movie, omdb_data, overwrite=True)
+
     if changed:
         movie.save(update_fields=changed)
         messages.success(

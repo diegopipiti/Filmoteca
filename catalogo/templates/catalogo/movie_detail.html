@@ -57,31 +57,7 @@
         font-weight: 500;
         color: #e0e0e0;
     }
-    /* Stelle nel pannello voti: usiamo star/half/empty come in alto */
-    .rating-panel .rating-stars {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-    }
-    .rating-panel .rating-stars .star {
-        color: #f2c94c;
-        font-size: 1.05rem;
-        line-height: 1;
-    }
-    .rating-panel .rating-stars .star.empty { color: #555; }
-    .rating-panel .rating-stars .star.half {
-        position: relative;
-        color: #555;
-    }
-    .rating-panel .rating-stars .star.half::before {
-        content: "\2605";
-        color: #f2c94c;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 50%;
-        overflow: hidden;
-    }
+
     .rating-row.disabled .rating-label,
     .rating-row.disabled .rating-stars,
     .rating-row.disabled .rating-number {
@@ -103,22 +79,23 @@
     .file-meta .meta-line { margin-bottom: 0.35rem; }
     .file-meta .meta-path { font-size: 0.8rem; color: rgba(255,255,255,0.5); word-break: break-all; }
 
-    .rating-stars-inline {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
+    /* Stelle generiche (usate nel pannello voti e sotto il titolo) */
+    .rating-stars {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
     }
-    .rating-stars-inline .star {
+    .rating-stars .star {
         font-size: 1.1rem;
         line-height: 1;
         color: #f2c94c; /* giallo */
     }
-    .rating-stars-inline .star.empty { color: #555; }
-    .rating-stars-inline .star.half {
+    .rating-stars .star.empty { color: #555; }
+    .rating-stars .star.half {
         position: relative;
         color: #555;
     }
-    .rating-stars-inline .star.half::before {
+    .rating-stars .star.half::before {
         content: "\2605";
         color: #f2c94c;
         position: absolute;
@@ -208,9 +185,8 @@
             <!-- Griglia dei voti -->
             {% if movie.public_rating %}
                 <div class="rating-panel text-center">
-                    <div class="rating-title">Voti</div>
+                   
                     <div class="rating-grid">
-
                         <div class="rating-row">
                             <div class="rating-label">Pubblico</div>
                             <div class="rating-value">
@@ -225,7 +201,6 @@
                                 {% if movie.critic_rating %}
                                     <span class="rating-number">{{ movie.critic_rating|floatformat:1 }}</span>
                                     <span class="rating-stars rating-stars-dyn" data-rating="{{ movie.critic_rating|default:0 }}"></span>
-                                    {% if movie.critic_source %}<span class="rating-count">{{ movie.critic_source }}</span>{% endif %}
                                 {% else %}
                                     n/d
                                 {% endif %}
@@ -339,28 +314,7 @@ document.addEventListener('DOMContentLoaded', function () {
         container.innerHTML = html;
     }
 
-    // Stella/e vicino al titolo (rating personale) - usa testo stella
-    function renderStarsTop(container, voto10) {
-        var voto = parseFloat(voto10);
-        if (isNaN(voto)) return;
-        var stars = Math.max(0, Math.min(5, voto / 2));
-        var full = Math.floor(stars);
-        var half = (stars - full) >= 0.5 ? 1 : 0;
-        var empty = 5 - full - half;
-        var html = '';
-        for (var i = 0; i < full; i++) html += '<span class="star">&#9733;</span>';
-        if (half) html += '<span class="star half">&#9733;</span>';
-        for (var i = 0; i < empty; i++) html += '<span class="star empty">&#9733;</span>';
-        container.innerHTML = html;
-    }
-
-    var ratingEl = document.querySelector('.rating-stars-top');
-    if (ratingEl) {
-        var voto = ratingEl.getAttribute('data-voto');
-        renderStarsTop(ratingEl, voto);
-    }
-
-    // Stelle dinamiche nel pannello voti (pubblico/critica/personale)
+    // Stelle dinamiche (pannello voti + blocco sotto titolo)
     var dynStars = document.querySelectorAll('.rating-stars-dyn');
     dynStars.forEach(function (el) {
         var voto = el.getAttribute('data-rating');
@@ -377,37 +331,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
-{{ block.super }}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // stessa logica che usiamo nella modale
-    function renderStars(container, voto10) {
-        var voto = parseFloat(voto10);
-        if (isNaN(voto)) {
-            container.innerHTML = '';
-            return;
-        }
 
-        var stars = Math.max(0, Math.min(5, voto / 2));  // 0-10 -> 0-5
-        var full = Math.floor(stars);
-        var half = (stars - full) >= 0.5 ? 1 : 0;
-        var empty = 5 - full - half;
-
-        var html = '';
-        for (var i = 0; i < full; i++)  html += '<span class="star full"></span>';
-        if (half)                      html += '<span class="star half"></span>';
-        for (var j = 0; j < empty; j++) html += '<span class="star empty"></span>';
-
-        container.innerHTML = html;
-    }
-
-    // trova il contenitore nella pagina “scheda completa” e disegna le stelle
-    var inlineStars = document.querySelector('.rating-stars-inline');
-    if (inlineStars) {
-        var voto = inlineStars.getAttribute('data-voto');
-        renderStars(inlineStars, voto);
-    }
-});
-</script>
 {% endblock %}
 
