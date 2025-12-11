@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="half">
+      <stop offset="50%" stop-color="#f5c518"></stop>
+      <stop offset="50%" stop-color="rgba(255,255,255,0.15)"></stop>
+    </linearGradient>
+  </defs>
+  <path fill="url(#half)" stroke="#f5c518" stroke-width="1" d="M12 .587l3.668 7.568L24 9.748l-6 5.848L19.335 24 12 19.897 4.665 24 
+       6 15.596 0 9.748l8.332-1.593z"></path>
+</svg>

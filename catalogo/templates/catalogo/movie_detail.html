@@ -5,102 +5,130 @@
 {% block content %}
 
 <style>
-/* Pulsanti azione */
-.action-buttons {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1.25rem;
-}
-.action-buttons form { margin: 0; }
+    /* Pulsanti azione */
+    .action-buttons {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1.25rem;
+    }
+    .action-buttons form { margin: 0; }
 
-/* Pannello voti */
-.rating-panel {
-    max-width: 340px;
-    margin: 2.5rem auto 1rem auto;
-    padding-top: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-}
-.rating-title {
-    font-weight: 700;
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
-}
-.rating-grid {
-    display: grid;
-    gap: 0.65rem;
-}
-.rating-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-}
-.rating-label {
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 700;
-    color: #cfd8dc;
-    min-width: 120px;
-}
-.rating-value {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    min-width: 120px;
-}
-.rating-number {
-    font-weight: 700;
-    color: #e0e0e0;
-}
-  /* Stelle nel pannello voti: usiamo star/half/empty come in alto */
-  .rating-panel .rating-stars {
+    /* Pannello voti */
+    .rating-panel {
+        max-width: 340px;
+        margin: 2.5rem auto 1rem auto;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .rating-title {
+        font-weight: 700;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.5rem;
+    }
+    .rating-grid {
+        display: grid;
+        gap: 0.65rem;
+    }
+    .rating-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+    }
+    .rating-label {
+        font-size: 1.05rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        font-weight: 500;
+        color: #cfd8dc;
+        min-width: 120px;
+    }
+    .rating-value {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        min-width: 120px;
+    }
+    .rating-number {
+        font-size: 1.05rem;
+        font-weight: 500;
+        color: #e0e0e0;
+    }
+    /* Stelle nel pannello voti: usiamo star/half/empty come in alto */
+    .rating-panel .rating-stars {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+    }
+    .rating-panel .rating-stars .star {
+        color: #f2c94c;
+        font-size: 1.05rem;
+        line-height: 1;
+    }
+    .rating-panel .rating-stars .star.empty { color: #555; }
+    .rating-panel .rating-stars .star.half {
+        position: relative;
+        color: #555;
+    }
+    .rating-panel .rating-stars .star.half::before {
+        content: "\2605";
+        color: #f2c94c;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 50%;
+        overflow: hidden;
+    }
+    .rating-row.disabled .rating-label,
+    .rating-row.disabled .rating-stars,
+    .rating-row.disabled .rating-number {
+        color: #7f8c8d;
+    }
+    .rating-count {
+        font-size: 0.8rem;
+        color: #95a5a6;
+    }
+
+    /* Meta file attenuate */
+    .file-meta {
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.65);
+        margin-top: 2.5rem !important;   /* più distacco */
+        padding-top: 0.75rem;             /* evita il collasso del margin */
+        border-top: 1px solid rgba(255,255,255,0.08);
+    }
+    .file-meta .meta-line { margin-bottom: 0.35rem; }
+    .file-meta .meta-path { font-size: 0.8rem; color: rgba(255,255,255,0.5); word-break: break-all; }
+
+    .rating-stars-inline {
     display: inline-flex;
     align-items: center;
     gap: 2px;
-  }
-  .rating-panel .rating-stars .star {
-    color: #f2c94c;
-    font-size: 1.05rem;
-    line-height: 1;
-  }
-  .rating-panel .rating-stars .star.empty { color: #555; }
-  .rating-panel .rating-stars .star.half {
-    position: relative;
-    color: #555;
-  }
-  .rating-panel .rating-stars .star.half::before {
-    content: "\2605";
-    color: #f2c94c;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 50%;
-    overflow: hidden;
-  }
-.rating-row.disabled .rating-label,
-  .rating-row.disabled .rating-stars,
-  .rating-row.disabled .rating-number {
-      color: #7f8c8d;
-  }
-  .rating-count {
-    font-size: 0.8rem;
-    color: #95a5a6;
-}
+    }
+    .rating-stars-inline .star {
+        font-size: 1.1rem;
+        line-height: 1;
+        color: #f2c94c; /* giallo */
+    }
+    .rating-stars-inline .star.empty { color: #555; }
+    .rating-stars-inline .star.half {
+        position: relative;
+        color: #555;
+    }
+    .rating-stars-inline .star.half::before {
+        content: "\2605";
+        color: #f2c94c;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 50%;
+        overflow: hidden;
+    }
 
-/* Meta file attenuate */
-.file-meta {
-    font-size: 0.85rem;
-    color: rgba(255,255,255,0.65);
-    margin-top: 2.5rem !important;   /* più distacco */
-    padding-top: 0.75rem;             /* evita il collasso del margin */
-    border-top: 1px solid rgba(255,255,255,0.08);
-}
-.file-meta .meta-line { margin-bottom: 0.35rem; }
-.file-meta .meta-path { font-size: 0.8rem; color: rgba(255,255,255,0.5); word-break: break-all; }
+        
 </style>
 
 <div class="container-fluid px-3 px-lg-5 my-4 position-relative">
@@ -145,10 +173,12 @@
 
                 {% if movie.voto %}
                     <span class="d-inline-flex align-items-center ms-2">
-                        <span class="rating-stars-top" data-voto="{{ movie.voto }}"></span>
-                        <span class="small text-secondary ms-1">({{ movie.voto }}/10)</span>
+                    <span class="rating-stars rating-stars-dyn" data-rating="{{ movie.voto }}"></span>
+                    <span class="small text-secondary ms-1">({{ movie.voto }}/10)</span>
                     </span>
                 {% endif %}
+
+
             </div>
 
             <!-- REGISTA -->
@@ -347,24 +377,37 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 </script>
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // stessa logica che usiamo nella modale
+    function renderStars(container, voto10) {
+        var voto = parseFloat(voto10);
+        if (isNaN(voto)) {
+            container.innerHTML = '';
+            return;
+        }
+
+        var stars = Math.max(0, Math.min(5, voto / 2));  // 0-10 -> 0-5
+        var full = Math.floor(stars);
+        var half = (stars - full) >= 0.5 ? 1 : 0;
+        var empty = 5 - full - half;
+
+        var html = '';
+        for (var i = 0; i < full; i++)  html += '<span class="star full"></span>';
+        if (half)                      html += '<span class="star half"></span>';
+        for (var j = 0; j < empty; j++) html += '<span class="star empty"></span>';
+
+        container.innerHTML = html;
+    }
+
+    // trova il contenitore nella pagina “scheda completa” e disegna le stelle
+    var inlineStars = document.querySelector('.rating-stars-inline');
+    if (inlineStars) {
+        var voto = inlineStars.getAttribute('data-voto');
+        renderStars(inlineStars, voto);
+    }
+});
+</script>
 {% endblock %}
-  /* Stelle nel badge in alto (voto personale) */
-  .rating-stars-top {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-  }
-  .rating-stars-top .star {
-    font-size: 1rem;
-    line-height: 1;
-    display: inline-block;
-    color: #f2c94c;
-  }
-  .rating-stars-top .star.empty { color: #555; }
-  .rating-stars-top .star.half {
-    color: transparent;
-    background: linear-gradient(90deg, #f2c94c 50%, #555 50%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
+
