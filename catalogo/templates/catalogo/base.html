@@ -41,12 +41,63 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: transform 0.15s ease
         }
 
         .poster-placeholder {
             position: absolute;
             inset: 0;
+            transition: transform 0.15s ease
         }
+
+        .poster-overlay {
+            position: absolute;
+            left: 0; right: 0; bottom: 0;
+            padding: 0.35rem 0.45rem;
+            background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.75) 100%);
+            color: #fff;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.15s ease, transform 0.15s ease;
+            font-size: 0.8rem;
+            }
+        .poster-overlay .overlay-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            line-height: 1.1;
+            }
+        .poster-overlay .overlay-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.75rem;
+            color: #f1f1f1;
+            }
+            
+            /* Stelle nell’overlay */
+        .poster-overlay .rating-stars {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            }
+        .poster-overlay .rating-stars .star { 
+            width: auto !important;
+            height: auto !important;
+            background: none !important;
+            color: #f2c94c !important;
+            font-size: 0.9rem !important;
+            line-height: 1;
+            display: inline-block;
+        }
+
+        .poster-overlay .rating-stars .star.empty { color: #555; !important;}
+        .poster-overlay .rating-stars .star.half {
+            position: relative; color: #555 !important;
+            }
+        .poster-overlay .rating-stars .star.half::before {
+            content: "\2605"; color: #f2c94c;
+            position: absolute; left: 0; top: 0; width: 50%; overflow: hidden;
+            }
 
         /* NAVBAR AMBASSADOR – look cinema elegante */
         .navbar-filmoteca {
@@ -186,8 +237,9 @@
         
         .poster-wrapper {
             border-radius: 8px;
-            overflow: hidden;
+            /*overflow: hidden;*/
             transition: transform 0.18s ease, box-shadow 0.25s ease;
+            position: relative;
         }
 
         .poster-wrapper:hover {
@@ -195,6 +247,12 @@
             box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
         }
 
+        /* Mostra overlay al hover */
+        .poster-wrapper:hover .poster-overlay {
+            opacity: 1;
+            transform: translateY(0);
+            z-index: 2;
+        }
 
         /* Paginazione stile AMBASSADOR: oro + nero, pillole moderne */
         .amb-pagination {
@@ -372,7 +430,7 @@
         /* Effetto hover locandine stile Netflix */
         .poster-wrapper {
             border-radius: 6px;
-            overflow: hidden;
+            /*overflow: hidden;*/
             transition:
                 transform 0.25s ease,
                 box-shadow 0.25s ease,
@@ -828,7 +886,84 @@
             display: inline-block;
             vertical-align: middle;
             filter: drop-shadow(0 0 4px rgba(245, 197, 24, 0.4));
+            }
+
+        .poster-overlay {
+            position: absolute;
+            left: 0; right: 0; bottom: 0;
+            padding: 0.5rem 0.6rem 0.4rem;
+            background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.85) 100%);
+            color: #fff;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            font-size: 0.85rem;
+            pointer-events: none;
+            }
+        .poster-overlay .overlay-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            line-height: 1.2;
+            margin-bottom: 0.1rem;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            }
+        .poster-overlay .overlay-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            color: #f1f1f1;
+            }
+        .poster-overlay .overlay-meta .year-pill {
+            background: rgba(255,255,255,0.18);
+            border-radius: 999px;
+            padding: 0.05rem 0.5rem;
+            font-size: 0.72rem;
+            }
+
+        .poster-overlay .rating-stars { gap: 2px; }
+        .poster-overlay .rating-stars .star { 
+            width: auto !important;
+            height: auto !important;
+            background: none !important;
+            color: #f2c94c; 
+            font-size: 0.85rem; 
+            line-height: 1; 
+            display: inline-block;
         }
+
+        .poster-overlay .rating-stars .star.empty { color: #555 !important;}
+        .poster-overlay .rating-stars .star.half {
+            position: relative;
+            color: #555 .poster-overlay .rating-stars .star.half;
+        }
+
+        .poster-overlay .rating-stars .star::before { content: "★"; }
+
+        .poster-overlay .rating-stars .star.half::before {
+            content: "\2605";
+            color: #f2c94c;
+            position: absolute;
+            left: 0; top: 0;
+            width: 50%;
+            }
+
+        .poster-wrapper,
+            .amb-rail-poster-wrapper {
+            position: relative;
+            /*overflow: hidden;*/
+            }
+        .poster-wrapper:hover .poster-overlay,
+            .amb-rail-poster-wrapper:hover .poster-overlay {
+            opacity: 1;
+            transform: translateY(0);
+            z-index: 2;
+            }
+
+            
 
     </style>
 
@@ -896,6 +1031,15 @@
                            data-bs-target="#metadataModal">
                             Aggiorna metadati
                         </a>
+                    </li>
+
+                    <li class="nav-item">
+                    <a class="nav-link"
+                        href="#"
+                        data-bs-toggle="modal"
+                        data-bs-target="#sortModal">
+                        Ordina
+                    </a>
                     </li>
 
                     <li class="nav-item">
@@ -976,50 +1120,20 @@
             container.innerHTML = html;
         }
 
+    </script>
+    
+    <script>
         document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('[data-role="voto-stars"]').forEach(function (el) {
-                var voto = el.getAttribute('data-voto');
-                renderStars(el, voto);
-            });
+            if (typeof renderStars === 'function') {
+                document.querySelectorAll('.rating-stars-dyn').forEach(function (el) {
+                renderStars(el, el.getAttribute('data-rating'));
+                });
+            }
         });
     </script>
-        {{ block.super }}
-        <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Converte il voto /10 in 0–5 stelle intere
-            function renderStars(container, voto10) {
-                var voto = parseFloat(voto10);
-                if (isNaN(voto)) {
-                    container.innerHTML = '';
-                    return;
-                }
 
-                // 0–10 -> 0–5, arrotondato
-                var stars = Math.round(voto / 2);
-                stars = Math.max(0, Math.min(5, stars));
+    {{ block.super }}
 
-                var html = '';
-                // Stelle piene
-                for (var i = 0; i < stars; i++) {
-                    html += '<span class="star full">★</span>';
-                }
-                // Stelle vuote fino ad arrivare a 5
-                for (var j = stars; j < 5; j++) {
-                    html += '<span class="star empty">★</span>';
-                }
-
-                container.innerHTML = html;
-            }
-
-            // Scheda completa: trova il contenitore e disegna le stelle
-            var inlineStars = document.querySelector('.rating-stars-inline');
-            if (inlineStars) {
-                var voto = inlineStars.getAttribute('data-voto');
-                renderStars(inlineStars, voto);
-            }
-        });
-        </script>
-    
     {% endblock %}
 
     <!-- Include nella base le modali, che si trovano in un file a parte. -->

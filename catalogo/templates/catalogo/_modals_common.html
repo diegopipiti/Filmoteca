@@ -203,3 +203,42 @@
     </div>
   </div>
 </div>
+
+<!-- MODAL ORDINAMENTO -->
+<div class="modal fade" id="sortModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content bg-dark text-light border-secondary">
+      <div class="modal-header border-secondary">
+        <h5 class="modal-title">Ordina locandine</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+      </div>
+      <form method="get" action="{% url 'movie_list' %}">
+        <div class="modal-body">
+          {# preserva eventuali filtri correnti #}
+          {% for key, val in request.GET.items %}
+            {% if key != 'sort' and key != 'page' %}
+              <input type="hidden" name="{{ key }}" value="{{ val }}">
+            {% endif %}
+          {% endfor %}
+          <div class="mb-2">
+            <label class="form-label small text-secondary">Ordina per</label>
+            <select name="sort" class="form-select form-select-sm">
+              <option value="titolo_az" {% if current_sort == 'titolo_az' %}selected{% endif %}>Titolo A→Z</option>
+              <option value="titolo_za" {% if current_sort == 'titolo_za' %}selected{% endif %}>Titolo Z→A</option>
+              <option value="anno_desc" {% if current_sort == 'anno_desc' %}selected{% endif %}>Anno ↓</option>
+              <option value="anno_asc" {% if current_sort == 'anno_asc' %}selected{% endif %}>Anno ↑</option>
+              <option value="voto_desc" {% if current_sort == 'voto_desc' %}selected{% endif %}>Voto ↓</option>
+              <option value="voto_asc" {% if current_sort == 'voto_asc' %}selected{% endif %}>Voto ↑</option>
+              <option value="ultima_visione" {% if current_sort == 'ultima_visione' %}selected{% endif %}>Ultima visione</option>
+              <option value="recenti" {% if current_sort == 'recenti' %}selected{% endif %}>Aggiunti di recente</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer border-secondary">
+          <button type="submit" class="btn btn-warning btn-sm">Applica</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

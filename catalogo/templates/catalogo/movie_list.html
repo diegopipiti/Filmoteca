@@ -95,6 +95,16 @@
                                                     </span>
                                                 </div>
                                             {% endif %}
+
+                                        <div class="poster-overlay">
+                                            <span class="overlay-title">{{ m.titolo }}</span>
+                                                <div class="overlay-meta">
+                                                    {% if m.anno %}<span class="year-pill">{{ m.anno }}</span>{% endif %}
+                                                    {% if m.voto %}
+                                                    <span class="rating-stars rating-stars-dyn" data-rating="{{ m.voto }}"></span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -304,6 +314,9 @@
 
 
 {% block extra_js %}
+    
+    {{ block.super }}
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
 
@@ -317,23 +330,9 @@
             var movieModal = document.getElementById('movieModal');
             if (!movieModal) return;
 
-            function renderStars(container, voto10) {
-                var voto = parseFloat(voto10);
-                if (isNaN(voto)) {
-                    container.innerHTML = '';
-                    return;
-                }
-                var stars = Math.max(0, Math.min(5, voto / 2));
-                var full = Math.floor(stars);
-                var half = (stars - full) >= 0.5 ? 1 : 0;
-                var empty = 5 - full - half;
-                var html = '';
-                for (var i = 0; i < full; i++) html += '<span class="star"></span>';
-                if (half) html += '<span class="star half"></span>';
-                for (var i = 0; i < empty; i++) html += '<span class="star empty"></span>';
-                container.innerHTML = html;
-            }
-
+            
+            //vecchia funzione qui. Sembra che funzioni anche senza. Se Lunedì tutto ok, questo placeholder lo tolgo
+        
             movieModal.addEventListener('show.bs.modal', function (event) {
                 var trigger = event.relatedTarget;
                 if (!trigger) return;

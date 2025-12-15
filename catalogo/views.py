@@ -171,7 +171,19 @@ def build_movie_filters(request):
 def movie_list(request):
 
     qs, filtri = build_movie_filters(request)
-    qs = qs.order_by("titolo")
+    sort_param = request.GET.get("sort", "titolo_az")
+    sort_map = {
+        "titolo_az": "titolo",
+        "titolo_za": "-titolo",
+        "anno_desc": "-anno",
+        "anno_asc": "anno",
+        "voto_desc": "-voto",
+        "voto_asc": "voto",
+        "ultima_visione": "-ultima_visione",
+        "recenti": "-id",
+    }
+    order_field = sort_map.get(sort_param, "titolo")
+    qs = qs.order_by(order_field)
 
     # --- PAGINAZIONE ---
     paginator = Paginator(qs, 24)  # 24 film per pagina

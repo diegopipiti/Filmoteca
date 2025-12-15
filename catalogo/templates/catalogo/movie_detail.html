@@ -11,6 +11,7 @@
         justify-content: center;
         align-items: center;
         gap: 1.25rem;
+        
     }
     .action-buttons form { margin: 0; }
 
@@ -67,7 +68,8 @@
         font-size: 0.8rem;
         color: #95a5a6;
     }
-
+    
+    
     /* Meta file attenuate */
     .file-meta {
         font-size: 0.85rem;
@@ -79,31 +81,7 @@
     .file-meta .meta-line { margin-bottom: 0.35rem; }
     .file-meta .meta-path { font-size: 0.8rem; color: rgba(255,255,255,0.5); word-break: break-all; }
 
-    /* Stelle generiche (usate nel pannello voti e sotto il titolo) */
-    .rating-stars {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-    }
-    .rating-stars .star {
-        font-size: 1.1rem;
-        line-height: 1;
-        color: #f2c94c; /* giallo */
-    }
-    .rating-stars .star.empty { color: #555; }
-    .rating-stars .star.half {
-        position: relative;
-        color: #555;
-    }
-    .rating-stars .star.half::before {
-        content: "\2605";
-        color: #f2c94c;
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 50%;
-        overflow: hidden;
-    }
+
 
         
 </style>
@@ -297,40 +275,24 @@
 
 {% endblock %}
 
+
 {% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    function renderStars(container, voto10) {
-        var voto = parseFloat(voto10);
-        if (isNaN(voto)) return;
-        var stars = Math.max(0, Math.min(5, voto / 2));
-        var full = Math.floor(stars);
-        var half = (stars - full) >= 0.5 ? 1 : 0;
-        var empty = 5 - full - half;
-        var html = '';
-        for (var i = 0; i < full; i++) html += '<span class="star"></span>';
-        if (half) html += '<span class="star half"></span>';
-        for (var i = 0; i < empty; i++) html += '<span class="star empty"></span>';
-        container.innerHTML = html;
-    }
-
-    // Stelle dinamiche (pannello voti + blocco sotto titolo)
-    var dynStars = document.querySelectorAll('.rating-stars-dyn');
-    dynStars.forEach(function (el) {
-        var voto = el.getAttribute('data-rating');
-        renderStars(el, voto);
-    });
-});
-</script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (el) {
+  {{ block.super }}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof renderStars === 'function') {
+        document.querySelectorAll('.rating-stars-dyn').forEach(function (el) {
+            renderStars(el, el.getAttribute('data-rating'));
+        });
+        }
+        // tooltip
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (el) {
         return new bootstrap.Tooltip(el);
+        });
     });
-});
-</script>
-
+  </script>
 {% endblock %}
+    
+
 
