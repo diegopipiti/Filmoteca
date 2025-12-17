@@ -120,6 +120,7 @@ def build_movie_filters(request):
     dim_da = request.GET.get("dim_da", "")
     dim_a = request.GET.get("dim_a", "")
     percorso = request.GET.get("percorso", "")
+    stato = request.GET.get("stato", "")
 
     if titolo:
         qs = qs.filter(titolo__icontains=titolo)
@@ -149,6 +150,8 @@ def build_movie_filters(request):
         qs = qs.filter(dimensione_file_mb__lte=dim_a)
     if percorso:
         qs = qs.filter(percorso__icontains=percorso)
+    if stato:
+        qs = qs.filter(stato=stato)
 
     filtri = {
         "titolo": titolo,

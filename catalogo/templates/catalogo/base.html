@@ -1015,6 +1015,18 @@
                         </a>
                     </li>
 
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navByStatus" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Specials
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="navByStatus">
+                            <li><a class="dropdown-item" href="{% url 'movie_list' %}?stato=todo">Da scaricare</a></li>
+                            <li><a class="dropdown-item" href="{% url 'movie_list' %}?stato=downloading">In download</a></li>
+                            <li><a class="dropdown-item" href="{% url 'movie_list' %}?stato=usb">On the USB</a></li>
+                            <li><a class="dropdown-item" href="{% url 'movie_list' %}?stato=done">Completed</a></li>
+                        </ul>
+                    </li>
+
                     <li class="nav-item">
                         <a class="nav-link"
                            href="#"

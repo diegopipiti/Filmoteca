@@ -53,5 +53,20 @@ class Movie(models.Model):
         blank=True, null=True, verbose_name="Data ultima visione"
     )
 
+    # Campi per gestire eventuali download download
+    class Stato(models.TextChoices):
+        TODO = "todo", "Da scaricare"
+        DOWNLOADING = "downloading", "In download"
+        USB = "usb", "On the USB"
+        DONE = "done", "Completed"
+
+    stato = models.CharField(
+        max_length=20,
+        choices=Stato.choices,
+        default=Stato.DONE,
+        blank=True,
+    )
+    note = models.TextField(blank=True)
+
     def __str__(self):
         return f"{self.titolo} ({self.anno})"

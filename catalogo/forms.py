@@ -22,7 +22,10 @@ class MovieForm(forms.ModelForm):
             "ultima_visione",
             "public_rating",
             "public_votes",
+            "stato",
+            "note",
         ]
         widgets = {
             "visto": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "note": forms.Textarea(attrs={"rows": 3, "class": "form-control"}),
         }
