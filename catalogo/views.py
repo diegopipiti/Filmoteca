@@ -121,6 +121,7 @@ def build_movie_filters(request):
     dim_a = request.GET.get("dim_a", "")
     percorso = request.GET.get("percorso", "")
     stato = request.GET.get("stato", "")
+    no_poster = request.GET.get("no_poster", "")
 
     if titolo:
         qs = qs.filter(titolo__icontains=titolo)
@@ -152,6 +153,8 @@ def build_movie_filters(request):
         qs = qs.filter(percorso__icontains=percorso)
     if stato:
         qs = qs.filter(stato=stato)
+    if no_poster:
+        qs = qs.filter(Q(locandina_url__isnull=True) | Q(locandina_url__exact=""))
 
     filtri = {
         "titolo": titolo,
