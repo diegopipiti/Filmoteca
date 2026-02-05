@@ -90,7 +90,7 @@
             display: inline-block;
         }
 
-        .poster-overlay .rating-stars .star.empty { color: #555; !important;}
+        .poster-overlay .rating-stars .star.empty { color: #555;}
         .poster-overlay .rating-stars .star.half {
             position: relative; color: #555 !important;
             }
@@ -499,8 +499,8 @@
             transform: translateY(-1px);
         }
 
-        {% comment %} una delle tante versioni delle stelle. Proviamo a lasciarne una sola
-        /* Stelle rating */
+        /*una delle tante versioni delle stelle. Proviamo a lasciarne una sola
+        Stelle rating 
         .rating-stars {
             display: inline-flex;
             align-items: center;
@@ -532,7 +532,7 @@
             width: 50%;
             overflow: hidden;
             color: #f7d26a;
-        } {% endcomment %}
+        } */
 
         /* Pannello form film */
         .movie-form-panel {
@@ -682,6 +682,7 @@
         .rating-stars .star.empty {
             background-image: url('/static/catalogo/star-empty.svg');
         }
+        
 
             /* Pulsante circolare minimal (stile Netflix) */
         .amb-circle-btn {
@@ -806,7 +807,6 @@
         /* ============================= */
         /* Stellette stile Netflix         */
         /* ============================= */
-        neutralizzata la parte stellette stile netflix per far rimanere una sola versione delle stelle
         .star {
             display: inline-block;
             width: 1rem;
@@ -847,8 +847,9 @@
             margin-right: 2px;
         }
 
-        {% comment %} 
+         
         /* Varianti (usano le SVG che hai creato) */
+        /*
         .rating-stars-inline .star.full {
             background-image: url("{% static 'catalogo/icons/star-full.svg' %}");
         }
@@ -861,30 +862,31 @@
             background-image: url("{% static 'catalogo/icons/star-empty.svg' %}");
         }
         
-        /* Contenitore stelle inline (scheda completa) */
+  
         .rating-stars-inline {
             display: inline-flex;
             align-items: center;
         }
 
-        /* Singola stella */
         .rating-stars-inline .star {
             font-size: 1.1rem;
             margin-right: 2px;
             line-height: 1;
         }
 
-        /* Stella “piena” (voto) */
+ 
         .rating-stars-inline .star.full {
-            color: #f5c518;  /* giallo tipo IMDb/Netflix */
+            color: #f5c518;  
         }
 
-        /* Stella “vuota” (sfondo) */
+
         .rating-stars-inline .star.empty {
             color: #444;
             opacity: 0.45;
-        } {% endcomment %}
-        
+        } 
+        */
+
+
         .amb-section-title {
             text-align: center;
             margin: 2rem 0 1rem;
@@ -946,7 +948,7 @@
         .poster-overlay .rating-stars .star.empty { color: #555 !important;}
         .poster-overlay .rating-stars .star.half {
             position: relative;
-            color: #555 .poster-overlay .rating-stars .star.half;
+            color: #555 
         }
 
         .poster-overlay .rating-stars .star::before { content: "★"; }
