@@ -1118,6 +1118,10 @@
 
     <!-- Script funzionanante per colorare le stelline JS -->
     <script>
+        {% comment %} 
+
+        Vecchia funzione per generare stelle (non usata più, ma la lascio commentata per riferimento)
+
         function renderStars(container, voto10) {
             var voto = parseFloat(voto10);
             if (isNaN(voto)) {
@@ -1135,7 +1139,26 @@
             for (var i = 0; i < empty; i++) html += '<span class="star empty"></span>';
 
             container.innerHTML = html;
-        }
+        } {% endcomment %}
+        <script>
+            function renderStars(container, voto10) {
+                var voto = parseFloat(voto10);
+                if (isNaN(voto)) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                var stars = Math.max(0, Math.min(5, voto / 2));
+                var full = Math.floor(stars);
+                var half = (stars - full) >= 0.5 ? 1 : 0;
+
+                var html = '';
+                for (var i = 0; i < full; i++) html += '<span class="star full"></span>';
+                if (half) html += '<span class="star half"></span>';
+
+                container.innerHTML = html;
+            }       
+        </script>
 
     </script>
     
