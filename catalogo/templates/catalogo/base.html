@@ -806,7 +806,7 @@
         /* ============================= */
         /* Stellette stile Netflix         */
         /* ============================= */
-        {% comment %} neutralizzata la parte stellette stile netflix per far rimanere una sola versione delle stelle
+        neutralizzata la parte stellette stile netflix per far rimanere una sola versione delle stelle
         .star {
             display: inline-block;
             width: 1rem;
@@ -845,8 +845,9 @@
             background-position: center;
             background-repeat: no-repeat;
             margin-right: 2px;
-        } {% endcomment %}
+        }
 
+        {% comment %} 
         /* Varianti (usano le SVG che hai creato) */
         .rating-stars-inline .star.full {
             background-image: url("{% static 'catalogo/icons/star-full.svg' %}");
@@ -882,7 +883,7 @@
         .rating-stars-inline .star.empty {
             color: #444;
             opacity: 0.45;
-        }
+        } {% endcomment %}
         
         .amb-section-title {
             text-align: center;
