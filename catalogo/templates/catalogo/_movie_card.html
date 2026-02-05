@@ -1,0 +1,39 @@
+{% for m in movies %}
+  <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-3">
+    <a href="#"
+       class="text-decoration-none text-light"
+       data-bs-toggle="modal"
+       data-bs-target="#movieModal"
+       data-title="{{ m.titolo }}"
+       data-movie-id="{{ m.pk }}"
+       data-anno="{{ m.anno }}"
+       data-genere="{{ m.genere }}"
+       data-regista="{{ m.regista }}"
+       data-visto="{{ m.visto }}"
+       data-voto="{{ m.voto }}"
+       data-percorso="{{ m.percorso }}"
+       data-poster="{{ m.locandina_url }}"
+       data-dimensione="{{ m.dimensione_file_mb }}"
+       data-codifica="{{ m.codifica }}"
+       data-trama="{{ m.trama|default_if_none:'' }}"
+       data-updateposter-url="{% url 'update_movie_poster' m.pk %}"
+       data-play-url="{% url 'movie_play' m.pk %}"
+       data-detail-url="{% url 'movie_detail' m.pk %}"
+       data-edit-url="{% url 'movie_edit' m.pk %}"
+       data-delete-url="{% url 'movie_delete' m.pk %}">
+      <div class="card h-100 bg-dark border-0">
+        <div class="poster-wrapper">
+          <div class="ratio-2x3">
+            {% if m.locandina_url %}
+              <img src="{{ m.locandina_url }}" class="poster-img" alt="{{ m.titolo }}">
+            {% else %}
+              <div class="poster-placeholder d-flex align-items-center justify-content-center">
+                <span class="small text-center px-2">{{ m.titolo }}</span>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+{% endfor %}
