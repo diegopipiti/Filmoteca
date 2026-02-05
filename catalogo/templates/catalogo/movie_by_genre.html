@@ -205,6 +205,17 @@
                                 {% if m.locandina_url %}
                                     <img src="{{ m.locandina_url }}"
                                         alt="{{ m.titolo }}">
+                                    
+                                    <div class="poster-overlay">
+                                        <span class="overlay-title">{{ m.titolo }}</span>
+                                        <div class="overlay-meta">
+                                            {% if m.anno %}<span class="year-pill">{{ m.anno }}</span>{% endif %}
+                                            {% if m.voto %}
+                                                <span class="rating-stars rating-stars-dyn" data-rating="{{ m.voto }}"></span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
                                 {% else %}
                                     <div class="d-flex align-items-center justify-content-center w-100 h-100">
                                         <span class="small text-center px-2 text-light">
